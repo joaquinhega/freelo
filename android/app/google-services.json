@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "578213470663",
+    "project_id": "freelo-5dee5",
+    "storage_bucket": "freelo-5dee5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:578213470663:android:330e37ddb2d8697b9179e2",
+        "android_client_info": {
+          "package_name": "com.example.freelo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIW424DsbTrny48_4rN4PUV79-GyZLtUw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:578213470663:android:042ae3adc937f87a9179e2",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIW424DsbTrny48_4rN4PUV79-GyZLtUw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
