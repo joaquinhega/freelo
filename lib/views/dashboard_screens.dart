@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'widgets/Footer.dart'; // Asegurate de tener esta ruta
+import 'widgets/Footer.dart'; 
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});

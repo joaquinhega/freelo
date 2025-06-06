@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets/Footer.dart';
 
 class TareasScreen extends StatelessWidget {
   const TareasScreen({super.key});
@@ -18,6 +19,9 @@ class TareasScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         child: const Icon(Icons.add),
+      ),
+      bottomNavigationBar: const Footer(
+        currentIndex: 1,
       ),
     );
   }

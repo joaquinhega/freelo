@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets/Footer.dart';
 
 class ClientesScreen extends StatelessWidget {
   const ClientesScreen({super.key});
@@ -15,6 +16,9 @@ class ClientesScreen extends StatelessWidget {
           _clientTile('Cliente C', 'Rediseño de sitio web'),
           _clientTile('Cliente D', 'Escribir artículo'),
         ],
+      ),
+      bottomNavigationBar: const Footer(
+        currentIndex: 2,
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets/Footer.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -61,6 +62,9 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {},
           ),
         ],
+      ),
+      bottomNavigationBar: const Footer(
+        currentIndex: 3,
       ),
     );
   }
