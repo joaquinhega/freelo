@@ -10,6 +10,7 @@ import '../views/facturacion.dart';
 import '../views/new_client.dart';
 import '../views/settings.dart';
 import '../views/tareas.dart';
+import '../views/bienvenida.dart';
 
 class Routes{
   static const String login = '/login';
@@ -23,6 +24,7 @@ class Routes{
   static const String new_client = '/nuevo-cliente';
   static const String Settings = '/settings';
   static const String tareas = '/tareas';
+  static const String bienvenida = '/bienvenida';
 
   Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -48,6 +50,8 @@ class Routes{
         return MaterialPageRoute(builder: (_) => SettingsScreen());
       case tareas:
         return MaterialPageRoute(builder: (_) => TareasScreen());
+      case bienvenida:
+        return MaterialPageRoute(builder: (_) => const WelcomeScreen());
       default:
         return MaterialPageRoute(builder: (_) => const Login());
     }
