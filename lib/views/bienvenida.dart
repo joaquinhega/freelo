@@ -86,7 +86,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                               opacity: 1,
                               duration: const Duration(milliseconds: 800),
                               child: Image.asset(
-                                'assets/fLogo.png',
+                                'assets/fLogoVerde.png',
                                 width: 120,
                                 height: 120,
                               ),

@@ -59,6 +59,9 @@ flutter:
   assets:
     - assets/homeOffice.jpg
     - assets/fLogo.png
+    - assets/fLogoBlanco.png
+    - assets/fLogoVerde.png
+    - assets/LogoCompleto.png
     - assets/google.png
     - assets/linkedin.png
     - assets/github.png
