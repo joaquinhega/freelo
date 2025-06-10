@@ -32,6 +32,8 @@ class Footer extends StatelessWidget {
     return BottomNavigationBar(
       currentIndex: currentIndex,
       onTap: (index) => _onTap(context, index),
+      selectedItemColor: Colors.green[800],
+      unselectedItemColor: Colors.grey,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Inicio'),
         BottomNavigationBarItem(icon: Icon(Icons.task), label: 'Tareas'),
