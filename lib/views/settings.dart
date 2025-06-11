@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/services/auth_service.dart';
 import 'widgets/Footer.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -27,6 +28,15 @@ class SettingsScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () {},
             child: const Text('Cambiar contraseña'),
+          ),
+          ElevatedButton(
+            onPressed: () async{
+              await AuthService().logout();
+              if(context.mounted) {
+                Navigator.pushReplacementNamed(context, '/bienvenida');
+              }
+            },
+            child: const Text('Cerrar sesión'),
           ),
 
           const SizedBox(height: 24),

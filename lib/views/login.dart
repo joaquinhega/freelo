@@ -53,7 +53,6 @@ class LoginState extends State<Login> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo
             Align(
               alignment: Alignment.topCenter,
               child: Image.asset(
@@ -102,7 +101,6 @@ class LoginState extends State<Login> {
               ),
             ),
             const SizedBox(height: 24),
-            // Botón de iniciar sesión más angosto
             SizedBox(
               width: 220,
               child: ElevatedButton(
@@ -134,12 +132,13 @@ class LoginState extends State<Login> {
             const SizedBox(height: 24),
             // Divider con texto
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Expanded(child: Divider(thickness: 1)),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Text(
-                    "o continuar con",
+                    "o",
                     style: GoogleFonts.montserrat(color: Colors.grey[600]),
                   ),
                 ),
@@ -147,30 +146,54 @@ class LoginState extends State<Login> {
               ],
             ),
             const SizedBox(height: 18),
-            // Botones sociales
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _SocialButton(
-                  asset: 'assets/google.png',
-                  onTap: () {}, // Implementa tu lógica
+            SizedBox(
+              width: 320,
+              height: 60,
+              child: ElevatedButton.icon(
+                icon: Image.asset(
+                  'assets/google.png',
+                  width: 24,
+                  height: 24,
                 ),
-                const SizedBox(width: 16),
-                _SocialButton(
-                  asset: 'assets/linkedin.png',
-                  onTap: () {},
+                label: Text(
+                "Continuar con Google",
+                style: GoogleFonts.montserrat(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(width: 16),
-                _SocialButton(
-                  asset: 'assets/github.png',
-                  onTap: () {},
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE0E0E0),
+                foregroundColor: Colors.black87,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  side: BorderSide(color: Colors.grey.shade400, width: 0.8),
                 ),
-                const SizedBox(width: 16),
-                _SocialButton(
-                  asset: 'assets/apple.png',
-                  onTap: () {},
+                textStyle: GoogleFonts.montserrat(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
                 ),
-              ],
+              ),
+                onPressed: () async {
+                  try {
+                    final user = await AuthService().signInWithGoogle();
+                    if (user != null) {
+                      Navigator.pushReplacementNamed(context, Routes.dashboard);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("No se pudo completar el inicio con Google.")),
+                      );
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Error con Google Sign-In: $e")),
+                    );
+                  }
+                },
+              ),
             ),
             const SizedBox(height: 28),
             GestureDetector(
@@ -187,41 +210,6 @@ class LoginState extends State<Login> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// Botón social reutilizable
-class _SocialButton extends StatelessWidget {
-  final String asset;
-  final VoidCallback onTap;
-
-  const _SocialButton({required this.asset, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(30),
-      onTap: onTap,
-      child: Ink(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: Colors.grey.shade300),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Image.asset(asset, width: 26, height: 26),
         ),
       ),
     );
