@@ -23,7 +23,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
       vsync: this,
     );
     _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    // Overlay más oscuro (0.75)
     _overlayOpacity = Tween<double>(begin: 0.0, end: 0.75).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeIn),
     );
@@ -43,32 +42,26 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
     return Scaffold(
       body: Stack(
         children: [
-          // --- MODIFICA EL FONDO DESDE AQUÍ ---
-          // Imagen de fondo
           Positioned.fill(
             child: Image.asset(
               'assets/homeOffice.jpg',
               fit: BoxFit.cover,
             ),
           ),
-          // Blur sobre la imagen
           Positioned.fill(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6), // <--- Cambia el blur aquí
+              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6), 
               child: Container(color: Colors.transparent),
             ),
           ),
-          // Overlay animado para oscurecer el fondo
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _overlayOpacity,
               builder: (context, child) => Container(
-                color: Colors.black.withOpacity(_overlayOpacity.value), // <--- Cambia la opacidad aquí
+                color: Colors.black.withOpacity(_overlayOpacity.value),
               ),
             ),
           ),
-          // --- HASTA AQUÍ MODIFICAS EL FONDO ---
-          // Contenido principal con fade-in
           FadeTransition(
             opacity: _fadeIn,
             child: SafeArea(
@@ -81,7 +74,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Logo animado
                             AnimatedOpacity(
                               opacity: 1,
                               duration: const Duration(milliseconds: 800),
@@ -92,7 +84,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                               ),
                             ),
                             const SizedBox(height: 36),
-                            // Título principal
                             Text(
                               '¡Impulsa tu trabajo freelance!',
                               textAlign: TextAlign.center,
@@ -111,7 +102,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                               ),
                             ),
                             const SizedBox(height: 18),
-                            // Microcopy persuasivo
                             Text(
                               'Gestioná clientes, tareas y cobros en un solo lugar.',
                               textAlign: TextAlign.center,
@@ -134,7 +124,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                       ),
                     ),
                   ),
-                  // Botón fijo abajo
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
                     child: SizedBox(

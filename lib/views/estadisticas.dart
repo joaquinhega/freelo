@@ -13,7 +13,7 @@ class EstadisticasScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Ingresos mensuales', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 150, child: Placeholder()), // Aquí iría un gráfico
+            const SizedBox(height: 150, child: Placeholder()), 
             const SizedBox(height: 16),
             const Text('Tiempo trabajado: 94 h'),
             const Text('Ingresos: \$21.200'),
