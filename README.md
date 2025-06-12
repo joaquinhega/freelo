@@ -7,3 +7,5 @@ PARA SUBIR CAMBIOS QUE HICE
 PARA BAJAR LOS CAMBIOS QUE HIZO EL OTRO
 
 1) git pull origin main
+
+dasdsadasfsdafsdf
