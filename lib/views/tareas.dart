@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'widgets/Footer.dart';
 
 class TareasScreen extends StatelessWidget {
@@ -8,13 +9,29 @@ class TareasScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Tareas')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _taskTile('Editar video', 'Cliente A'),
-          _taskTile('Traducción de documento', 'Cliente B'),
-          _taskTile('Escribir artículo', 'Cliente D'),
-        ],
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('tareas').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('No hay tareas'));
+          }
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: snapshot.data!.docs.map((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              return _taskTile(
+                data['titulo'] ?? '',
+                data['cliente'] ?? '',
+              );
+            }).toList(),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},

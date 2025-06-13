@@ -1,14 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class NewTaskScreen extends StatelessWidget {
+class NewTaskScreen extends StatefulWidget {
   const NewTaskScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final titleController = TextEditingController();
-    final clientController = TextEditingController();
-    final descriptionController = TextEditingController();
+  State<NewTaskScreen> createState() => _NewTaskScreenState();
+}
 
+class _NewTaskScreenState extends State<NewTaskScreen> {
+  final titleController = TextEditingController();
+  final clientController = TextEditingController();
+  final descriptionController = TextEditingController();
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    clientController.dispose();
+    descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(color: Colors.black),
@@ -21,7 +35,7 @@ class NewTaskScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Nueva Tarea',
+              'Nueva tarea',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
@@ -36,18 +50,7 @@ class NewTaskScreen extends StatelessWidget {
             // Cliente
             const Text('Cliente'),
             const SizedBox(height: 6),
-            GestureDetector(
-              onTap: () {
-                // abrir selección de cliente
-              },
-              child: AbsorbPointer(
-                child: _inputField(
-                  controller: clientController,
-                  hint: 'Empresa A',
-                  suffixIcon: const Icon(Icons.arrow_forward_ios, size: 16),
-                ),
-              ),
-            ),
+            _inputField(controller: clientController, hint: 'Cliente A'),
 
             const SizedBox(height: 16),
 
@@ -56,26 +59,30 @@ class NewTaskScreen extends StatelessWidget {
             const SizedBox(height: 6),
             _inputField(
               controller: descriptionController,
-              hint: 'Crear modelo y animar personaje',
+              hint: 'Detalles de la tarea',
               maxLines: 3,
             ),
 
-            const Spacer(),
+            const SizedBox(height: 24),
 
-            // Botón
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // guardar tarea
+                onPressed: () async {
+                  if (titleController.text.isEmpty || clientController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Completa todos los campos')),
+                    );
+                    return;
+                  }
+                  await FirebaseFirestore.instance.collection('tareas').add({
+                    'titulo': titleController.text,
+                    'cliente': clientController.text,
+                    'descripcion': descriptionController.text,
+                    'fecha': FieldValue.serverTimestamp(),
+                  });
+                  Navigator.pop(context);
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF007AFF),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
                 child: const Text('Crear tarea'),
               ),
             ),
