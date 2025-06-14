@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets/Footer.dart';
 
 class EstadisticasScreen extends StatelessWidget {
   const EstadisticasScreen({super.key});
@@ -6,7 +7,11 @@ class EstadisticasScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Estadísticas')),
+      appBar: AppBar(
+        title: const Text('Estadísticas'),
+        automaticallyImplyLeading: false,
+      ),
+      bottomNavigationBar: const Footer(currentIndex: 3), 
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

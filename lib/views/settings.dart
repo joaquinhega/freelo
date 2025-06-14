@@ -14,10 +14,12 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Configuración'),
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.black,
         elevation: 0,
       ),
+      bottomNavigationBar: const Footer(currentIndex: 4),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -72,9 +74,6 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {},
           ),
         ],
-      ),
-      bottomNavigationBar: const Footer(
-        currentIndex: 3,
       ),
     );
   }
