@@ -22,6 +22,9 @@ class Footer extends StatelessWidget {
         Navigator.pushReplacementNamed(context, Routes.clientes);
         break;
       case 3:
+        Navigator.pushReplacementNamed(context, Routes.estadisticas);
+        break;
+      case 4:
         Navigator.pushReplacementNamed(context, Routes.Settings);
         break;
     }
@@ -35,9 +38,10 @@ class Footer extends StatelessWidget {
       selectedItemColor: Colors.green[800],
       unselectedItemColor: Colors.grey,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Inicio'),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
         BottomNavigationBarItem(icon: Icon(Icons.task), label: 'Tareas'),
-        BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Clientes'),
+        BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Proyectos'),
+        BottomNavigationBarItem(icon: Icon(Icons.graphic_eq), label: 'Métricas'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Mi perfil'),
       ],
     );

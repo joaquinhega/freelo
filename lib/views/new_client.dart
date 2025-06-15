@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/firestore_service.dart';
 
 class NewClientScreen extends StatefulWidget {
   const NewClientScreen({super.key});
@@ -13,6 +13,8 @@ class _NewClientScreenState extends State<NewClientScreen> {
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
   final notesController = TextEditingController();
+
+  final FirestoreService _firestoreService = FirestoreService();
 
   @override
   void dispose() {
@@ -80,13 +82,16 @@ class _NewClientScreenState extends State<NewClientScreen> {
                     );
                     return;
                   }
-                  await FirebaseFirestore.instance.collection('clientes').add({
-                    'nombre': nameController.text,
-                    'email': emailController.text,
-                    'telefono': phoneController.text,
-                    'notas': notesController.text,
-                    'fecha': FieldValue.serverTimestamp(),
-                  });
+                  // --- Antes: lógica directa con Firestore ---
+                  // await FirebaseFirestore.instance.collection('clientes').add({...});
+
+                  // --- Ahora: lógica centralizada en FirestoreService ---
+                  await _firestoreService.addClient(
+                    nombre: nameController.text,
+                    email: emailController.text,
+                    telefono: phoneController.text,
+                    notas: notesController.text,
+                  );
                   Navigator.pop(context);
                 },
                 child: const Text('Guardar'),
