@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import 'widgets/Footer.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
   Future<String> _getUserName() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && user.displayName != null && user.displayName!.isNotEmpty) {
@@ -39,8 +45,7 @@ class DashboardScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 4),
-              const Text('Hoy trabajaste: 2 h 15 m',
-                  style: TextStyle(color: Colors.grey)),
+              const WorkTimer(),
               const SizedBox(height: 20),
               _sectionCard(
                 color: const Color(0xFFDFF5E5),
@@ -235,3 +240,43 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 }
+
+// Widget separado para el contador de horas trabajadas
+class WorkTimer extends StatefulWidget {
+  const WorkTimer({super.key});
+
+  @override
+  State<WorkTimer> createState() => _WorkTimerState();
+}
+
+class _WorkTimerState extends State<WorkTimer> {
+  DateTime? _inicioSesion;
+  Timer? _timer;
+  Duration _duracion = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _inicioSesion = DateTime.now();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        _duracion = DateTime.now().difference(_inicioSesion!);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+ @override
+Widget build(BuildContext context) {
+  final horas = _duracion.inHours;
+  final minutos = _duracion.inMinutes % 60;
+  return Text(
+    'Hoy trabajaste: ${horas > 0 ? '$horas h ' : ''}$minutos m',
+    style: const TextStyle(color: Colors.grey),
+  );
+}}
