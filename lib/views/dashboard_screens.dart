@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'widgets/Footer.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'widgets/Footer.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   Future<String> _getUserName() async {
     final user = FirebaseAuth.instance.currentUser;
-    // Si tienes el nombre guardado en displayName:
     if (user != null && user.displayName != null && user.displayName!.isNotEmpty) {
       return user.displayName!;
     }
-    // Si solo tienes el email, muestra el email antes de la @
     if (user != null && user.email != null) {
       return user.email!.split('@')[0];
     }
@@ -22,7 +21,7 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
-      bottomNavigationBar: const Footer(currentIndex: 0), 
+      bottomNavigationBar: const Footer(currentIndex: 0),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -43,7 +42,6 @@ class DashboardScreen extends StatelessWidget {
               const Text('Hoy trabajaste: 2 h 15 m',
                   style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 20),
-
               _sectionCard(
                 color: const Color(0xFFDFF5E5),
                 child: Column(
@@ -52,9 +50,42 @@ class DashboardScreen extends StatelessWidget {
                     const Text('Tareas activas',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 10),
-                    _taskRow(Icons.play_circle, 'Rediseño web', '45 min'),
-                    const SizedBox(height: 8),
-                    _taskRow(Icons.pause_circle_filled, 'Propuesta UX', '1 h 30 m'),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseAuth.instance.currentUser == null
+                          ? const Stream.empty()
+                          : FirebaseFirestore.instance
+                              .collection('tasks')
+                              .doc(FirebaseAuth.instance.currentUser!.uid)
+                              .collection('userTasks')
+                              .where('isCompleted', isEqualTo: false)
+                              .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Text('No tienes tareas activas.');
+                        }
+                        final tareas = snapshot.data!.docs;
+                        return Column(
+                          children: [
+                            for (var doc in tareas)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: _taskRow(
+                                  Icons.play_circle,
+                                  doc.data() is Map && (doc.data() as Map).containsKey('title')
+                                      ? doc['title'] ?? 'Sin título'
+                                      : 'Sin título',
+                                  doc.data() is Map && (doc.data() as Map).containsKey('duracion')
+                                      ? doc['duracion']?.toString() ?? ''
+                                      : '',
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
                     const SizedBox(height: 12),
                     TextButton.icon(
                       onPressed: () {
@@ -71,9 +102,7 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(height: 16),
-
               _sectionCard(
                 color: const Color(0xFFE3F0FB),
                 child: Column(
@@ -94,9 +123,7 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(height: 16),
-
               Row(
                 children: [
                   Expanded(
@@ -129,9 +156,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 12),
-
               GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(context, '/clientes');
