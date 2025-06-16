@@ -1,8 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'widgets/Footer.dart'; 
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
+
+  Future<String> _getUserName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    // Si tienes el nombre guardado en displayName:
+    if (user != null && user.displayName != null && user.displayName!.isNotEmpty) {
+      return user.displayName!;
+    }
+    // Si solo tienes el email, muestra el email antes de la @
+    if (user != null && user.email != null) {
+      return user.email!.split('@')[0];
+    }
+    return 'Usuario';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,8 +29,16 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Hola, Ignacio 👋',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              FutureBuilder<String>(
+                future: _getUserName(),
+                builder: (context, snapshot) {
+                  final name = snapshot.data ?? 'Usuario';
+                  return Text(
+                    'Hola, $name 👋',
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  );
+                },
+              ),
               const SizedBox(height: 4),
               const Text('Hoy trabajaste: 2 h 15 m',
                   style: TextStyle(color: Colors.grey)),
