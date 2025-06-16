@@ -17,6 +17,21 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   final FirestoreService _firestoreService = FirestoreService();
 
   bool _isLoading = false;
+  List<String> _projects = [];
+  String? _selectedProject;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProjects();
+  }
+
+  Future<void> _loadProjects() async {
+    final projects = await _firestoreService.getAllProjectNames();
+    setState(() {
+      _projects = projects;
+    });
+  }
 
   @override
   void dispose() {
@@ -27,7 +42,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   }
 
   Future<void> _saveTask() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _selectedProject == null) return;
     setState(() => _isLoading = true);
 
     try {
@@ -35,6 +50,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
         title: _titleController.text.trim(),
         client: _clientController.text.trim(),
         description: _descriptionController.text.trim(),
+        project: _selectedProject!,
       );
 
       if (mounted) {
@@ -80,6 +96,28 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 24),
+                const Text('Proyecto'),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  value: _selectedProject,
+                  items: _projects
+                      .map((project) => DropdownMenuItem(
+                            value: project,
+                            child: Text(project),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedProject = value;
+                    });
+                  },
+                  validator: (value) =>
+                      value == null ? 'Seleccione un proyecto' : null,
+                  decoration: const InputDecoration(
+                    hintText: 'Seleccione un proyecto',
+                  ),
+                ),
+                const SizedBox(height: 16),
                 const Text('Título'),
                 const SizedBox(height: 6),
                 TextFormField(
