@@ -11,6 +11,7 @@ import '../views/new_client.dart';
 import '../views/settings.dart';
 import '../views/tareas.dart';
 import '../views/bienvenida.dart';
+import '../views/detailsProject.dart';
 
 class Routes{
   static const String login = '/login';
@@ -25,6 +26,7 @@ class Routes{
   static const String Settings = '/settings';
   static const String tareas = '/tareas';
   static const String bienvenida = '/bienvenida';
+  static const String details_project = '/details_project';
 
   Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -52,6 +54,8 @@ class Routes{
         return MaterialPageRoute(builder: (_) => TareasScreen());
       case bienvenida:
         return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+      case details_project:
+      return MaterialPageRoute(builder: (_) => DetailsProjectScreen(projectData: {}, projectId: '',));       
       default:
         return MaterialPageRoute(builder: (_) => const Login());
     }

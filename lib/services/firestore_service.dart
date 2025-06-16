@@ -39,29 +39,43 @@ class FirestoreService {
         .orderBy('timestamp', descending: true)
         .snapshots();
   }
-    Future<void> addClient({
-    required String nombre,
-    required String email,
-    String? telefono,
-    String? notas,
+
+  //Guardar un nuevo proyecto
+  Future<void> addProject({
+    required String title,
+    String? description,
+    String? date, 
+    bool hasPhases = false,
+    List<Map<String, String>>? phases,
+    bool hasClient = false,
+    Map<String, String>? clientInfo, 
   }) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('No autenticado');
+
+    Map<String, dynamic> projectData = {
+      'title': title,
+      'description': description ?? '',
+      'date': date ?? '',
+      'hasPhases': hasPhases,
+      'phases': phases ?? [],
+      'hasClient': hasClient,
+      'timestamp': FieldValue.serverTimestamp(), 
+    };
+
+    if (hasClient && clientInfo != null) {
+      projectData['client'] = clientInfo;
+    }
+
     await _db
         .collection('users')
         .doc(user.uid)
-        .collection('clients')
-        .add({
-          'nombre': nombre,
-          'email': email,
-          'telefono': telefono ?? '',
-          'notas': notas ?? '',
-          'fecha': FieldValue.serverTimestamp(),
-        });
+        .collection('projects') 
+        .add(projectData);
   }
 
-  // Obtener stream de clientes
-  Stream<QuerySnapshot> getClientsStream() {
+  // Obtener stream de proyectos del usuario autenticado
+  Stream<QuerySnapshot> getProjectsStream() {
     final user = _auth.currentUser;
     if (user == null) {
       return const Stream.empty();
@@ -69,8 +83,8 @@ class FirestoreService {
     return _db
         .collection('users')
         .doc(user.uid)
-        .collection('clients')
-        .orderBy('nombre')
+        .collection('projects')
+        .orderBy('timestamp', descending: true) 
         .snapshots();
   }
 }
