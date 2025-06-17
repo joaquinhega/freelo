@@ -11,9 +11,7 @@ class NewTaskScreen extends StatefulWidget {
 class _NewTaskScreenState extends State<NewTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _clientController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _durationController = TextEditingController();
 
   final FirestoreService _firestoreService = FirestoreService();
 
@@ -37,9 +35,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   @override
   void dispose() {
     _titleController.dispose();
-    _clientController.dispose();
     _descriptionController.dispose();
-    _durationController.dispose();
     super.dispose();
   }
 
@@ -50,10 +46,8 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
     try {
       await _firestoreService.addTask(
         title: _titleController.text.trim(),
-        client: _clientController.text.trim(),
         description: _descriptionController.text.trim(),
         project: _selectedProject!,
-        duracion: int.tryParse(_durationController.text.trim()) ?? 0,
         fecha: DateTime.now(),
       );
 
@@ -133,17 +127,6 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                       value == null || value.isEmpty ? 'Ingrese un título' : null,
                 ),
                 const SizedBox(height: 16),
-                const Text('Cliente'),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _clientController,
-                  decoration: const InputDecoration(
-                    hintText: 'Cliente A',
-                  ),
-                  validator: (value) =>
-                      value == null || value.isEmpty ? 'Ingrese el cliente' : null,
-                ),
-                const SizedBox(height: 16),
                 const Text('Descripción'),
                 const SizedBox(height: 6),
                 TextFormField(
@@ -152,18 +135,6 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                     hintText: 'Detalles de la tarea',
                   ),
                   maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                const Text('Duración (minutos)'),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _durationController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    hintText: 'Ej: 45',
-                  ),
-                  validator: (value) =>
-                      value == null || value.isEmpty ? 'Ingrese la duración' : null,
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
