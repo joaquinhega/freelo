@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'widgets/Footer.dart';
+import 'new_tarea.dart'; // Asegúrate de que la ruta sea correcta
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -124,7 +125,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 12),
                     TextButton.icon(
                       onPressed: () {
-                        Navigator.pushNamed(context, '/nueva-tarea');
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                          ),
+                          builder: (context) => Padding(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
+                            child: SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.85,
+                              child: const NewTaskScreen(),
+                            ),
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('Nueva tarea'),

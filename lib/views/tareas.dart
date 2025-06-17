@@ -17,7 +17,6 @@ class _TareasScreenState extends State<TareasScreen> {
   @override
   void initState() {
     super.initState();
-
     _tasksStream = _firestoreService.getUserTasksStream();
   }
 
@@ -47,7 +46,7 @@ class _TareasScreenState extends State<TareasScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
                   title: Text(task['title'] ?? ''),
-                  subtitle: Text(task['client'] ?? ''),
+                  subtitle: Text(task['description'] ?? ''),
                   trailing: Icon(
                     task['isCompleted'] == true
                         ? Icons.check_circle
