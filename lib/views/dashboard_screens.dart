@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'widgets/Footer.dart'; 
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
@@ -26,11 +23,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return 'Usuario';
   }
 
+  Future<double> _getIngresosMes() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return 0.0;
+
+    final now = DateTime.now();
+    final inicioMes = DateTime(now.year, now.month, 1);
+    final finMes = DateTime(now.year, now.month + 1, 1);
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('facturas')
+        .where('fecha', isGreaterThanOrEqualTo: inicioMes)
+        .where('fecha', isLessThan: finMes)
+        .get();
+
+    double total = 0.0;
+    for (var doc in snapshot.docs) {
+      final precio = doc['precio'];
+      if (precio is int) {
+        total += precio.toDouble();
+      } else if (precio is double) {
+        total += precio;
+      } else if (precio is String) {
+        total += double.tryParse(precio) ?? 0.0;
+      }
+    }
+    return total;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final String nombreUsuario = user?.displayName?.split(' ').first ?? 'Usuario';
-
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       bottomNavigationBar: const Footer(currentIndex: 0),
@@ -40,10 +64,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Hola! $nombreUsuario 👋',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
               FutureBuilder<String>(
                 future: _getUserName(),
                 builder: (context, snapshot) {
@@ -123,9 +143,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Ingresos este mes: \$78.200',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    FutureBuilder<double>(
+                      future: _getIngresosMes(),
+                      builder: (context, snapshot) {
+                        final ingresos = snapshot.data ?? 0.0;
+                        return Text(
+                          'Ingresos este mes: \$${ingresos.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 4),
                     Row(
                       children: const [
@@ -251,7 +282,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// Widget separado para el contador de horas trabajadas
 class WorkTimer extends StatefulWidget {
   const WorkTimer({super.key});
 
@@ -281,12 +311,13 @@ class _WorkTimerState extends State<WorkTimer> {
     super.dispose();
   }
 
- @override
-Widget build(BuildContext context) {
-  final horas = _duracion.inHours;
-  final minutos = _duracion.inMinutes % 60;
-  return Text(
-    'Hoy trabajaste: ${horas > 0 ? '$horas h ' : ''}$minutos m',
-    style: const TextStyle(color: Colors.grey),
-  );
-}}
+  @override
+  Widget build(BuildContext context) {
+    final horas = _duracion.inHours;
+    final minutos = _duracion.inMinutes % 60;
+    return Text(
+      'Hoy trabajaste: ${horas > 0 ? '$horas h ' : ''}$minutos m',
+      style: const TextStyle(color: Colors.grey),
+    );
+  }
+}

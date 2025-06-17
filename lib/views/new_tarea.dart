@@ -13,6 +13,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _clientController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _durationController = TextEditingController();
 
   final FirestoreService _firestoreService = FirestoreService();
 
@@ -38,6 +39,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
     _titleController.dispose();
     _clientController.dispose();
     _descriptionController.dispose();
+    _durationController.dispose();
     super.dispose();
   }
 
@@ -51,6 +53,8 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
         client: _clientController.text.trim(),
         description: _descriptionController.text.trim(),
         project: _selectedProject!,
+        duracion: int.tryParse(_durationController.text.trim()) ?? 0,
+        fecha: DateTime.now(),
       );
 
       if (mounted) {
@@ -148,6 +152,18 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                     hintText: 'Detalles de la tarea',
                   ),
                   maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+                const Text('Duración (minutos)'),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _durationController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: 'Ej: 45',
+                  ),
+                  validator: (value) =>
+                      value == null || value.isEmpty ? 'Ingrese la duración' : null,
                 ),
                 const SizedBox(height: 24),
                 SizedBox(

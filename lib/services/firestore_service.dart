@@ -5,11 +5,14 @@ class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Guardar una nueva tarea
+  // Guardar una nueva tarea con proyecto, duración y fecha
   Future<void> addTask({
     required String title,
     required String client,
-    String? description,
+    required String description,
+    required String project,
+    required int duracion,
+    required DateTime fecha,
   }) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('No autenticado');
@@ -20,7 +23,10 @@ class FirestoreService {
         .add({
           'title': title,
           'client': client,
-          'description': description ?? '',
+          'description': description,
+          'project': project,
+          'duracion': duracion,
+          'fecha': fecha,
           'timestamp': FieldValue.serverTimestamp(),
           'isCompleted': false,
         });
@@ -40,7 +46,7 @@ class FirestoreService {
         .snapshots();
   }
 
-  //Guardar un nuevo proyecto
+  // Guardar un nuevo proyecto
   Future<void> addProject({
     required String title,
     String? description,
@@ -86,5 +92,22 @@ class FirestoreService {
         .collection('projects')
         .orderBy('timestamp', descending: true) 
         .snapshots();
+  }
+
+  // Obtener todos los nombres de proyectos del usuario autenticado
+  Future<List<String>> getAllProjectNames() async {
+    final user = _auth.currentUser;
+    if (user == null) return [];
+    final snapshot = await _db
+        .collection('users')
+        .doc(user.uid)
+        .collection('projects')
+        .get();
+    return snapshot.docs.map((doc) => doc['title'] as String).toList();
+  }
+
+  // Obtener el perfil del usuario como stream
+  Stream<DocumentSnapshot> getUserProfileStream(String uid) {
+    return _db.collection('users').doc(uid).snapshots();
   }
 }
