@@ -1,22 +1,29 @@
 import 'package:flutter/material.dart';
 import 'widgets/Footer.dart'; 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final String nombreUsuario = user?.displayName?.split(' ').first ?? 'Usuario';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
-      bottomNavigationBar: const Footer(currentIndex: 0), 
+      bottomNavigationBar: const Footer(currentIndex: 0),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Hola, Ignacio 👋',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(
+                'Hola! $nombreUsuario 👋',
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 4),
               const Text('Hoy trabajaste: 2 h 15 m',
                   style: TextStyle(color: Colors.grey)),
