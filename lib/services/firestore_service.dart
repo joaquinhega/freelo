@@ -87,7 +87,4 @@ class FirestoreService {
         .orderBy('timestamp', descending: true) 
         .snapshots();
   }
-    Stream<DocumentSnapshot> getUserProfileStream(String uid) {
-    return _db.collection('users').doc(uid).snapshots();
-  }
 }
