@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/views/detailsProject.dart';
 import 'package:myapp/views/new_client.dart';
 import '../services/firestore_service.dart';
-import 'widgets/Footer.dart'; 
+import 'widgets/Footer.dart';
 
 class ClientesScreen extends StatefulWidget {
   const ClientesScreen({super.key});
@@ -14,24 +14,24 @@ class ClientesScreen extends StatefulWidget {
 
 class _ClientesScreenState extends State<ClientesScreen> {
   final FirestoreService _firestoreService = FirestoreService();
-  late Stream<QuerySnapshot> projectsStream; 
+  late Stream<QuerySnapshot> projectsStream;
 
   @override
   void initState() {
     super.initState();
-    projectsStream = _firestoreService.getProjectsStream(); 
+    projectsStream = _firestoreService.getProjectsStream();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Proyectos'), 
+        title: const Text('Proyectos'),
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      bottomNavigationBar: const Footer(currentIndex: 2), 
+      bottomNavigationBar: const Footer(currentIndex: 2),
       body: StreamBuilder<QuerySnapshot>(
         stream: projectsStream,
         builder: (context, snapshot) {
@@ -100,18 +100,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
                               ],
                             ),
                           ),
-                        if (data['hasClient'] == true && data['client'] != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Cliente:', style: TextStyle(fontWeight: FontWeight.bold)),
-                                Text('  Nombre: ${data['client']['nombre'] ?? ''}'),
-                                Text('  Email: ${data['client']['email'] ?? ''}'),
-                              ],
-                            ),
-                          ),
+                        // Cliente y duración eliminados
                       ],
                     ),
                   ),

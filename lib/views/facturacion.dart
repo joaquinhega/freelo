@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FacturacionScreen extends StatefulWidget {
   const FacturacionScreen({super.key});
@@ -23,17 +25,47 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
     super.dispose();
   }
 
-  void _generarFactura() {
+  void _generarFactura() async {
     if (_formKey.currentState!.validate()) {
-      // Aquí puedes guardar la factura en Firestore o mostrar un mensaje
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      // Convierte la fecha a DateTime
+      DateTime? fechaFactura;
+      try {
+        final partes = _fechaController.text.split('/');
+        fechaFactura = DateTime(
+          int.parse(partes[2]),
+          int.parse(partes[1]),
+          int.parse(partes[0]),
+        );
+      } catch (_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fecha inválida'), backgroundColor: Colors.red),
+        );
+        return;
+      }
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('facturas')
+          .add({
+            'cliente': _clienteController.text.trim(),
+            'fecha': fechaFactura,
+            'descripcion': _descripcionController.text.trim(),
+            'precio': double.tryParse(_precioController.text.trim()) ?? 0.0,
+          });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Factura generada correctamente')),
+        const SnackBar(content: Text('Factura creada con éxito'), backgroundColor: Colors.green),
       );
-      // Limpia los campos si lo deseas
-      _clienteController.clear();
-      _fechaController.clear();
-      _descripcionController.clear();
-      _precioController.clear();
+
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          Navigator.of(context).popUntil((route) => route.settings.name == '/');
+        }
+      });
     }
   }
 
@@ -59,7 +91,7 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
               const Text('Fecha'),
               TextFormField(
                 controller: _fechaController,
-                decoration: const InputDecoration(hintText: 'Ej: 6 abr. 2024'),
+                decoration: const InputDecoration(hintText: 'Ej: 6/4/2024'),
                 validator: (value) =>
                     value == null || value.isEmpty ? 'Ingrese la fecha' : null,
                 onTap: () async {
