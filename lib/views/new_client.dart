@@ -124,10 +124,34 @@ class _NewClientScreenState extends State<NewClientScreen> {
 
             const Text('Fecha de Entrega'),
             const SizedBox(height: 6),
-            _campoEntrada(
-                controlador: _controladorFecha,
-                textoAyuda: 'dd/mm/aaaa',
-                tipoTeclado: TextInputType.datetime),
+            TextFormField(
+              controller: _controladorFecha,
+              readOnly: true,
+              decoration: const InputDecoration(
+                hintText: 'dd/mm/aaaa',
+                filled: true,
+                fillColor: Color(0xFFF2F2F7),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                suffixIcon: Icon(Icons.calendar_today),
+              ),
+              onTap: () async {
+                FocusScope.of(context).requestFocus(FocusNode());
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  _controladorFecha.text =
+                      '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                }
+              },
+            ),
             const SizedBox(height: 24),
 
             Row(

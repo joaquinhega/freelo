@@ -99,29 +99,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _saveFreelancerDetails() async {
     setState(() => _saving = true);
+
     final firstName = _firstNameController.text.trim();
     final lastName = _lastNameController.text.trim();
     final email = _emailController.text.trim();
     final phone = _phoneController.text.trim();
     final address = _addressController.text.trim();
 
-    if (firstName.isEmpty || lastName.isEmpty || email.isEmpty || phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Completa todos los campos obligatorios.")),
-      );
-      setState(() => _saving = false);
-      return;
+    if (_isGoogleLoggedIn) {
+      if (phone.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("El teléfono es obligatorio.")),
+        );
+        setState(() => _saving = false);
+        return;
+      }
+    } else {
+      if (firstName.isEmpty || lastName.isEmpty || email.isEmpty || phone.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Completa todos los campos obligatorios.")),
+        );
+        setState(() => _saving = false);
+        return;
+      }
     }
 
     try {
-      await _firestoreService.createFreelancerDetails(
-        _currentUser!.uid,
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        phone: phone,
-        address: address,
-      );
+      if (_isGoogleLoggedIn) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(_currentUser!.uid)
+            .collection('profile')
+            .doc('freelancerDetails')
+            .update({
+              'phone': phone,
+              'address': address,
+            });
+      } else {
+        await _firestoreService.createFreelancerDetails(
+          _currentUser!.uid,
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          phone: phone,
+          address: address,
+        );
+      }
       setState(() {
         _editing = false;
       });
@@ -208,7 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final freelancer = _freelancerDetails ?? {};
 
-        return Scaffold(
+   return Scaffold(
       appBar: AppBar(
         title: const Text('Configuración'),
         automaticallyImplyLeading: false,
@@ -216,7 +239,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          if (!_isGoogleLoggedIn && !_editing)
+          // Permitir edición para todos los usuarios (Google y email/contraseña)
+          if (!_editing)
             IconButton(
               icon: const Icon(Icons.edit, color: Colors.black),
               onPressed: () {
@@ -233,12 +257,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           const Text('Datos de facturación', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
-          if (_editing && !_isGoogleLoggedIn) ...[
-            _editTile('Nombre *', _firstNameController, icon: Icons.person_outline),
-            _editTile('Apellido *', _lastNameController, icon: Icons.person_outline),
-            _editTile('Correo electrónico *', _emailController, icon: Icons.mail_outline, enabled: false),
-            _editTile('Teléfono *', _phoneController, icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
-            _editTile('Dirección', _addressController, icon: Icons.location_on_outlined),
+          if (_editing) ...[
+            // Si es Google, los campos de nombre, apellido y email están deshabilitados
+            _editTile('Nombre', _firstNameController, icon: Icons.person_outline, enabled: !_isGoogleLoggedIn),
+            _editTile('Apellido', _lastNameController, icon: Icons.person_outline, enabled: !_isGoogleLoggedIn),
+            _editTile('Correo electrónico', _emailController, icon: Icons.mail_outline, enabled: !_isGoogleLoggedIn),
+            _editTile('Teléfono *', _phoneController, icon: Icons.phone_outlined, keyboardType: TextInputType.phone, enabled: true),
+            _editTile('Dirección', _addressController, icon: Icons.location_on_outlined, enabled: true),
             const SizedBox(height: 12),
             Row(
               children: [

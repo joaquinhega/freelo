@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:myapp/services/auth_service.dart';
@@ -273,6 +274,24 @@ class RegisterState extends State<Register> {
                     try {
                       final user = await AuthService().signInWithGoogle();
                       if (user != null) {
+                        // Verifica si ya existe freelancerDetails
+                        final doc = await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(user.uid)
+                            .collection('profile')
+                            .doc('freelancerDetails')
+                            .get();
+                        if (!doc.exists) {
+                          // Si no existe, lo crea con los datos de Google y deja teléfono/dirección vacíos
+                          await FirestoreService().createFreelancerDetails(
+                            user.uid,
+                            firstName: user.displayName?.split(' ').first ?? '',
+                            lastName: user.displayName?.split(' ').skip(1).join(' ') ?? '',
+                            email: user.email ?? '',
+                            phone: '',
+                            address: '',
+                          );
+                        }
                         Navigator.pushReplacementNamed(context, Routes.dashboard);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(

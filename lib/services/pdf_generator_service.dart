@@ -60,9 +60,15 @@ class PdfGeneratorService {
               pw.Text('FACTURADO A:', style: pw.TextStyle(font: boldTtf, fontSize: 16)),
               pw.SizedBox(height: 5),
               pw.Text('Nombre Completo: $clientName', style: pw.TextStyle(font: ttf, fontSize: 14)),
-              pw.Text('Empresa: $clientCompany' .isNotEmpty ? clientCompany : 'N/A', style: pw.TextStyle(font: ttf, fontSize: 12)),
+              pw.Text(
+                'Empresa: ${clientCompany.isNotEmpty ? clientCompany : 'N/A'}',
+                style: pw.TextStyle(font: ttf, fontSize: 12),
+              ),              
               pw.Text('Email: $clientEmail', style: pw.TextStyle(font: ttf, fontSize: 12)),
-              pw.Text('Teléfono: $clientPhone' .isNotEmpty ? clientPhone : 'N/A', style: pw.TextStyle(font: ttf, fontSize: 12)),
+              pw.Text(
+                'Teléfono: ${clientPhone.isNotEmpty ? clientPhone : 'N/A'}',
+                style: pw.TextStyle(font: ttf, fontSize: 12),
+              ),              
               pw.SizedBox(height: 30),
               pw.Table.fromTextArray(
                 headers: ['Descripción', 'Precio Unitario', 'Total'],
