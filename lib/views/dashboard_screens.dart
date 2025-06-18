@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
+import 'package:flutter/material.dart'; // Asegúrate de tener esta importación
 import 'widgets/Footer.dart';
-import 'new_tarea.dart'; // Asegúrate de que la ruta sea correcta
+import 'new_tarea.dart'; // Ajusta la ruta si es necesario
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -15,10 +15,46 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   Future<String> _getUserName() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null && user.displayName != null && user.displayName!.isNotEmpty) {
+    if (user == null) return 'Usuario';
+
+    // Obtiene el nombre desde Firestore (perfil)
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (doc.exists && doc.data() != null) {
+        // Opción 1: Si el campo 'nombre' está directamente en el documento del usuario
+        if (doc.data()!.containsKey('nombre') && doc['nombre'] != null && doc['nombre'].toString().isNotEmpty) {
+          return doc['nombre'].toString();
+        }
+        // Opción 2: Si el nombre está en una subcolección 'profile' -> 'freelancerDetails'
+        final profileDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('profile')
+            .doc('freelancerDetails')
+            .get();
+
+        if (profileDoc.exists && profileDoc.data() != null) {
+          final firstName = profileDoc.data()!.containsKey('firstName') ? profileDoc['firstName'] : '';
+          final lastName = profileDoc.data()!.containsKey('lastName') ? profileDoc['lastName'] : '';
+          if (firstName.isNotEmpty || lastName.isNotEmpty) {
+            return '$firstName $lastName'.trim();
+          }
+        }
+      }
+    } catch (e) {
+      // Ignorar errores de Firestore y continuar con las opciones de respaldo
+      print("Error obteniendo nombre de Firestore: $e");
+    }
+
+    // Si no hay nombre en Firestore (o hubo un error), usa displayName o email
+    if (user.displayName != null && user.displayName!.isNotEmpty) {
       return user.displayName!;
     }
-    if (user != null && user.email != null) {
+    if (user.email != null) {
       return user.email!.split('@')[0];
     }
     return 'Usuario';

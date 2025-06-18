@@ -17,7 +17,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Map<String, dynamic>? _freelancerDetails;
 
   final bool _notificaciones = false;
-
   bool _isGoogleLoggedIn = false;
 
   final FirestoreService _firestoreService = FirestoreService();
@@ -125,26 +124,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     try {
-      if (_isGoogleLoggedIn) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(_currentUser!.uid)
-            .collection('profile')
-            .doc('freelancerDetails')
-            .update({
-              'phone': phone,
-              'address': address,
-            });
-      } else {
-        await _firestoreService.createFreelancerDetails(
-          _currentUser!.uid,
-          firstName: firstName,
-          lastName: lastName,
-          email: email,
-          phone: phone,
-          address: address,
-        );
-      }
+      // Permitir siempre editar todos los campos
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .collection('profile')
+          .doc('freelancerDetails')
+          .set({
+            'firstName': firstName,
+            'lastName': lastName,
+            'email': email,
+            'phone': phone,
+            'address': address,
+          }, SetOptions(merge: true));
+
+      // Sincroniza el nombre en users/{uid}
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .set({
+            'nombre': '$firstName $lastName',
+          }, SetOptions(merge: true));
+
       setState(() {
         _editing = false;
       });
@@ -160,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _saving = false);
   }
 
-  Widget _infoTile(String label, String value, {IconData? icon, VoidCallback? onEditPressed, bool showEditIcon = true}) {
+  Widget _infoTile(String label, String value, {IconData? icon}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -188,20 +189,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _editTile(String label, TextEditingController controller, {IconData? icon, bool enabled = true, TextInputType? keyboardType}) {
+  Widget _editTile(String label, TextEditingController controller, {IconData? icon, TextInputType? keyboardType}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
       child: TextField(
         controller: controller,
-        enabled: enabled,
         keyboardType: keyboardType,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: icon != null ? Icon(icon, color: Colors.grey[600]) : null,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
-          fillColor: enabled ? Colors.white : const Color(0xFFF2F2F7),
+          fillColor: Colors.white,
         ),
       ),
     );
@@ -231,7 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final freelancer = _freelancerDetails ?? {};
 
-   return Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: const Text('Configuración'),
         automaticallyImplyLeading: false,
@@ -239,7 +239,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          // Permitir edición para todos los usuarios (Google y email/contraseña)
           if (!_editing)
             IconButton(
               icon: const Icon(Icons.edit, color: Colors.black),
@@ -258,12 +257,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Text('Datos de facturación', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
           if (_editing) ...[
-            // Si es Google, los campos de nombre, apellido y email están deshabilitados
-            _editTile('Nombre', _firstNameController, icon: Icons.person_outline, enabled: !_isGoogleLoggedIn),
-            _editTile('Apellido', _lastNameController, icon: Icons.person_outline, enabled: !_isGoogleLoggedIn),
-            _editTile('Correo electrónico', _emailController, icon: Icons.mail_outline, enabled: !_isGoogleLoggedIn),
-            _editTile('Teléfono *', _phoneController, icon: Icons.phone_outlined, keyboardType: TextInputType.phone, enabled: true),
-            _editTile('Dirección', _addressController, icon: Icons.location_on_outlined, enabled: true),
+            _editTile('Nombre', _firstNameController, icon: Icons.person_outline),
+            _editTile('Apellido', _lastNameController, icon: Icons.person_outline),
+            _editTile('Correo electrónico', _emailController, icon: Icons.mail_outline),
+            _editTile('Teléfono *', _phoneController, icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
+            _editTile('Dirección', _addressController, icon: Icons.location_on_outlined),
             const SizedBox(height: 12),
             Row(
               children: [
