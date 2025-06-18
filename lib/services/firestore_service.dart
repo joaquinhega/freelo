@@ -8,10 +8,8 @@ class FirestoreService {
   // Guardar una nueva tarea con proyecto, duración y fecha
   Future<void> addTask({
     required String title,
-    required String client,
     required String description,
     required String project,
-    required int duracion,
     required DateTime fecha,
   }) async {
     final user = _auth.currentUser;
@@ -22,10 +20,8 @@ class FirestoreService {
         .collection('userTasks')
         .add({
           'title': title,
-          'client': client,
           'description': description,
           'project': project,
-          'duracion': duracion,
           'fecha': fecha,
           'timestamp': FieldValue.serverTimestamp(),
           'isCompleted': false,

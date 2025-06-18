@@ -33,7 +33,7 @@ class EstadisticasScreen extends StatelessWidget {
     return ingresosPorMes;
   }
 
-  Future<int> _getHorasTrabajadas() async {
+  Future<int> _getCantidadTareas() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return 0;
 
@@ -43,19 +43,7 @@ class EstadisticasScreen extends StatelessWidget {
         .collection('userTasks')
         .get();
 
-    int totalMinutos = 0;
-    for (var doc in snapshot.docs) {
-      final duracion = doc['duracion'];
-      if (duracion is int) {
-        totalMinutos += duracion;
-      } else if (duracion is String) {
-        final match = RegExp(r'\d+').firstMatch(duracion);
-        if (match != null) {
-          totalMinutos += int.tryParse(match.group(0)!) ?? 0;
-        }
-      }
-    }
-    return (totalMinutos / 60).round();
+    return snapshot.docs.length;
   }
 
   Future<double> _getIngresosTotales() async {
@@ -94,7 +82,7 @@ class EstadisticasScreen extends StatelessWidget {
 
     Map<String, double> clientes = {};
     for (var doc in snapshot.docs) {
-      final cliente = doc['cliente'] ?? 'Sin cliente';
+      final cliente = doc.data().containsKey('cliente') ? doc['cliente'] : 'Sin cliente';
       final precio = doc['precio'];
       double monto = 0.0;
       if (precio is int) monto = precio.toDouble();
@@ -188,10 +176,10 @@ class EstadisticasScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               FutureBuilder<int>(
-                future: _getHorasTrabajadas(),
+                future: _getCantidadTareas(),
                 builder: (context, snapshot) {
-                  final horas = snapshot.data ?? 0;
-                  return Text('Tiempo trabajado: $horas h');
+                  final cantidad = snapshot.data ?? 0;
+                  return Text('Tareas creadas: $cantidad');
                 },
               ),
               FutureBuilder<double>(

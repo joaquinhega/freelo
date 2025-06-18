@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../routes/routes.dart';
 
+// Pantalla de bienvenida con animaciones y fondo desenfocado
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({Key? key}) : super(key: key);
 
@@ -18,6 +19,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
+    // Controla las animaciones de fade-in y overlay
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
@@ -42,18 +44,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
     return Scaffold(
       body: Stack(
         children: [
+          // Imagen de fondo
           Positioned.fill(
             child: Image.asset(
               'assets/homeOffice.jpg',
               fit: BoxFit.cover,
             ),
           ),
+          // Efecto de desenfoque sobre la imagen
           Positioned.fill(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6), 
               child: Container(color: Colors.transparent),
             ),
           ),
+          // Overlay oscuro animado
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _overlayOpacity,
@@ -62,6 +67,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
               ),
             ),
           ),
+          // Contenido principal con animación de fade-in
           FadeTransition(
             opacity: _fadeIn,
             child: SafeArea(
@@ -74,6 +80,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // Logo animado
                             AnimatedOpacity(
                               opacity: 1,
                               duration: const Duration(milliseconds: 800),
@@ -84,6 +91,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                               ),
                             ),
                             const SizedBox(height: 36),
+                            // Título de bienvenida
                             Text(
                               '¡Impulsa tu trabajo freelance!',
                               textAlign: TextAlign.center,
@@ -102,6 +110,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                               ),
                             ),
                             const SizedBox(height: 18),
+                            // Subtítulo
                             Text(
                               'Gestioná clientes, tareas y cobros en un solo lugar.',
                               textAlign: TextAlign.center,
@@ -124,6 +133,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                       ),
                     ),
                   ),
+                  // Botón para ir a login
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
                     child: SizedBox(
