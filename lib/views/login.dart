@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../routes/routes.dart';
 import '../services/auth_service.dart';
 
+// Pantalla de login con email/contraseña y Google Sign-In
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -22,6 +23,7 @@ class LoginState extends State<Login> {
     super.dispose();
   }
 
+  // Método para login con email y contraseña
   void _login() async {
     setState(() => _loading = true);
     var user = await AuthService().login(_emailController.text, _passwordController.text);
@@ -53,6 +55,7 @@ class LoginState extends State<Login> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Logo de la app
             Align(
               alignment: Alignment.topCenter,
               child: Image.asset(
@@ -61,6 +64,7 @@ class LoginState extends State<Login> {
                 height: 220,
               ),
             ),
+            // Texto de bienvenida
             Text(
               'Ingresá tus datos para continuar',
               style: GoogleFonts.montserrat(
@@ -69,6 +73,7 @@ class LoginState extends State<Login> {
               ),
             ),
             const SizedBox(height: 32),
+            // Campo de email
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
@@ -85,6 +90,7 @@ class LoginState extends State<Login> {
               ),
             ),
             const SizedBox(height: 18),
+            // Campo de contraseña
             TextField(
               controller: _passwordController,
               obscureText: true,
@@ -101,6 +107,7 @@ class LoginState extends State<Login> {
               ),
             ),
             const SizedBox(height: 24),
+            // Botón de login
             SizedBox(
               width: 220,
               child: ElevatedButton(
@@ -130,7 +137,7 @@ class LoginState extends State<Login> {
               ),
             ),
             const SizedBox(height: 24),
-            // Divider con texto
+            // Divider con texto "o"
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -146,6 +153,7 @@ class LoginState extends State<Login> {
               ],
             ),
             const SizedBox(height: 18),
+            // Botón de login con Google
             SizedBox(
               width: 320,
               height: 60,
@@ -156,27 +164,27 @@ class LoginState extends State<Login> {
                   height: 24,
                 ),
                 label: Text(
-                "Continuar con Google",
-                style: GoogleFonts.montserrat(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                  "Continuar con Google",
+                  style: GoogleFonts.montserrat(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE0E0E0),
-                foregroundColor: Colors.black87,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  side: BorderSide(color: Colors.grey.shade400, width: 0.8),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE0E0E0),
+                  foregroundColor: Colors.black87,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    side: BorderSide(color: Colors.grey.shade400, width: 0.8),
+                  ),
+                  textStyle: GoogleFonts.montserrat(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
                 ),
-                textStyle: GoogleFonts.montserrat(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[700],
-                ),
-              ),
                 onPressed: () async {
                   try {
                     final user = await AuthService().signInWithGoogle();
@@ -196,6 +204,7 @@ class LoginState extends State<Login> {
               ),
             ),
             const SizedBox(height: 28),
+            // Link para ir a registro
             GestureDetector(
               onTap: () {
                 Navigator.pushReplacementNamed(context, Routes.register);

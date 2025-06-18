@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:myapp/services/auth_service.dart';
 import '../routes/routes.dart';
 
+// Pantalla de registro de usuario con email/contraseña y Google Sign-In
 class Register extends StatefulWidget {
   const Register({super.key});
 
@@ -15,6 +16,7 @@ class RegisterState extends State<Register> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
+  // Método para registrar usuario con email y contraseña
   void _register() async {
     final email = _emailController.text;
     final password = _passwordController.text;
@@ -49,12 +51,14 @@ class RegisterState extends State<Register> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Logo de la app
               Image.asset(
                 'assets/LogoCompleto.png',
                 width: 220,
                 height: 220,
               ),
               const SizedBox(height: 24),
+              // Texto de bienvenida
               Text(
                 'Crea tu cuenta para comenzar',
                 style: GoogleFonts.montserrat(
@@ -63,6 +67,7 @@ class RegisterState extends State<Register> {
                 ),
               ),
               const SizedBox(height: 32),
+              // Campo de email
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -79,6 +84,7 @@ class RegisterState extends State<Register> {
                 ),
               ),
               const SizedBox(height: 18),
+              // Campo de contraseña
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -95,6 +101,7 @@ class RegisterState extends State<Register> {
                 ),
               ),
               const SizedBox(height: 18),
+              // Campo para confirmar contraseña
               TextField(
                 controller: _confirmPasswordController,
                 obscureText: true,
@@ -111,6 +118,7 @@ class RegisterState extends State<Register> {
                 ),
               ),
               const SizedBox(height: 28),
+              // Botón para registrar usuario
               SizedBox(
                 width: 220,
                 child: ElevatedButton(
@@ -131,6 +139,7 @@ class RegisterState extends State<Register> {
                 ),
               ),
               const SizedBox(height: 24),
+              // Divider con texto "o"
               Row(
                 children: [
                   const Expanded(child: Divider(thickness: 1)),
@@ -145,6 +154,7 @@ class RegisterState extends State<Register> {
                 ],
               ),
               const SizedBox(height: 18),
+              // Botón de registro con Google
               SizedBox(
                 width: 320,
                 height: 60,
@@ -191,6 +201,7 @@ class RegisterState extends State<Register> {
                 ),
               ),
               const SizedBox(height: 28),
+              // Link para ir a login si ya tienes cuenta
               GestureDetector(
                 onTap: () {
                   Navigator.pushReplacementNamed(context, Routes.login);
