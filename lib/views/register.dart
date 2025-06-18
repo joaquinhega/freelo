@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:myapp/services/auth_service.dart';
+import 'package:myapp/services/firestore_service.dart';
 import '../routes/routes.dart';
 
 class Register extends StatefulWidget {
@@ -11,14 +12,29 @@ class Register extends StatefulWidget {
 }
 
 class RegisterState extends State<Register> {
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
 
   void _register() async {
-    final email = _emailController.text;
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
+    final address = _addressController.text.trim();
+
+    if (firstName.isEmpty || lastName.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty || phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Completa todos los campos obligatorios.")),
+      );
+      return;
+    }
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -29,6 +45,15 @@ class RegisterState extends State<Register> {
 
     final user = await AuthService().register(email, password);
     if (user != null) {
+      // Guardar freelancerDetails con los datos ingresados
+      await FirestoreService().createFreelancerDetails(
+        user.uid,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        phone: phone,
+        address: address, // Puede ser vacío
+      );
       Navigator.pushReplacementNamed(context, Routes.dashboard);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -64,11 +89,41 @@ class RegisterState extends State<Register> {
               ),
               const SizedBox(height: 32),
               TextField(
+                controller: _firstNameController,
+                style: GoogleFonts.montserrat(),
+                decoration: InputDecoration(
+                  labelText: "Nombre *",
+                  labelStyle: GoogleFonts.montserrat(color: green),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: Icon(Icons.person, color: green),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 18),
+              TextField(
+                controller: _lastNameController,
+                style: GoogleFonts.montserrat(),
+                decoration: InputDecoration(
+                  labelText: "Apellido *",
+                  labelStyle: GoogleFonts.montserrat(color: green),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: Icon(Icons.person_outline, color: green),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 18),
+              TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 style: GoogleFonts.montserrat(),
                 decoration: InputDecoration(
-                  labelText: "Email",
+                  labelText: "Email *",
                   labelStyle: GoogleFonts.montserrat(color: green),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -80,11 +135,27 @@ class RegisterState extends State<Register> {
               ),
               const SizedBox(height: 18),
               TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                style: GoogleFonts.montserrat(),
+                decoration: InputDecoration(
+                  labelText: "Teléfono *",
+                  labelStyle: GoogleFonts.montserrat(color: green),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: Icon(Icons.phone, color: green),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 18),
+              TextField(
                 controller: _passwordController,
                 obscureText: true,
                 style: GoogleFonts.montserrat(),
                 decoration: InputDecoration(
-                  labelText: "Contraseña",
+                  labelText: "Contraseña *",
                   labelStyle: GoogleFonts.montserrat(color: green),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -100,7 +171,7 @@ class RegisterState extends State<Register> {
                 obscureText: true,
                 style: GoogleFonts.montserrat(),
                 decoration: InputDecoration(
-                  labelText: "Confirmar Contraseña",
+                  labelText: "Confirmar Contraseña *",
                   labelStyle: GoogleFonts.montserrat(color: green),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -108,6 +179,22 @@ class RegisterState extends State<Register> {
                   prefixIcon: Icon(Icons.lock_outline, color: green),
                   filled: true,
                   fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 18),
+              TextField(
+                controller: _addressController,
+                style: GoogleFonts.montserrat(),
+                decoration: InputDecoration(
+                  labelText: "Dirección (opcional)",
+                  labelStyle: GoogleFonts.montserrat(color: green),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: Icon(Icons.location_on, color: green),
+                  filled: true,
+                  fillColor: Colors.white,
+                  helperText: "Puedes completarla o modificarla luego en configuración",
                 ),
               ),
               const SizedBox(height: 28),

@@ -50,11 +50,11 @@ class FirestoreService {
   Future<void> addProject({
     required String title,
     String? description,
-    String? date, 
+    String? date,
     bool hasPhases = false,
     List<Map<String, String>>? phases,
     bool hasClient = false,
-    Map<String, String>? clientInfo, 
+    Map<String, String>? clientInfo,
   }) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('No autenticado');
@@ -66,7 +66,7 @@ class FirestoreService {
       'hasPhases': hasPhases,
       'phases': phases ?? [],
       'hasClient': hasClient,
-      'timestamp': FieldValue.serverTimestamp(), 
+      'timestamp': FieldValue.serverTimestamp(),
     };
 
     if (hasClient && clientInfo != null) {
@@ -76,7 +76,7 @@ class FirestoreService {
     await _db
         .collection('users')
         .doc(user.uid)
-        .collection('projects') 
+        .collection('projects')
         .add(projectData);
   }
 
@@ -90,7 +90,7 @@ class FirestoreService {
         .collection('users')
         .doc(user.uid)
         .collection('projects')
-        .orderBy('timestamp', descending: true) 
+        .orderBy('timestamp', descending: true)
         .snapshots();
   }
 
@@ -109,5 +109,55 @@ class FirestoreService {
   // Obtener el perfil del usuario como stream
   Stream<DocumentSnapshot> getUserProfileStream(String uid) {
     return _db.collection('users').doc(uid).snapshots();
+  }
+
+  // Crear documento freelancerDetails al registrar usuario
+  Future<void> createFreelancerDetails(
+    String userId, {
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String phone,
+    String address = '',
+  }) async {
+    await _db
+        .collection('users')
+        .doc(userId)
+        .collection('profile')
+        .doc('freelancerDetails')
+        .set({
+          'firstName': firstName,
+          'lastName': lastName,
+          'email': email,
+          'phone': phone,
+          'address': address,
+        });
+  }
+
+  // Actualizar un proyecto existente
+  Future<void> updateProject({
+    required String userId,
+    required String projectId,
+    required Map<String, dynamic> data,
+  }) async {
+    await _db
+        .collection('users')
+        .doc(userId)
+        .collection('projects')
+        .doc(projectId)
+        .update(data);
+  }
+
+  // Eliminar un proyecto existente
+  Future<void> deleteProject({
+    required String userId,
+    required String projectId,
+  }) async {
+    await _db
+        .collection('users')
+        .doc(userId)
+        .collection('projects')
+        .doc(projectId)
+        .delete();
   }
 }

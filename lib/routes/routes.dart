@@ -31,33 +31,36 @@ class Routes{
   Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case login:
-        return MaterialPageRoute(builder: (_) => const Login());
+        return MaterialPageRoute(builder: (_) => const Login(), settings: settings);
       case register:
-        return MaterialPageRoute(builder: (_) => const Register());
+        return MaterialPageRoute(builder: (_) => const Register(), settings: settings);
       case dashboard:
-        return MaterialPageRoute(builder: (_) => DashboardScreen());
+        return MaterialPageRoute(builder: (_) => DashboardScreen(), settings: settings);
       case new_tarea:
-        return MaterialPageRoute(builder: (_) => NewTaskScreen());
+        return MaterialPageRoute(builder: (_) => NewTaskScreen(), settings: settings);
       case calendar:
-        return MaterialPageRoute(builder: (_) => CalendarScreen());
+        return MaterialPageRoute(builder: (_) => CalendarScreen(), settings: settings);
       case clientes:
-        return MaterialPageRoute(builder: (_) => ClientesScreen());
+        return MaterialPageRoute(builder: (_) => ClientesScreen(), settings: settings);
       case estadisticas:
-        return MaterialPageRoute(builder: (_) => EstadisticasScreen());
+        return MaterialPageRoute(builder: (_) => EstadisticasScreen(), settings: settings);
       case facturacion:
-        return MaterialPageRoute(builder: (_) => FacturacionScreen());
+        return MaterialPageRoute(builder: (_) => FacturacionScreen(), settings: settings);
       case new_client:
-        return MaterialPageRoute(builder: (_) => NewClientScreen());
+        return MaterialPageRoute(builder: (_) => NewClientScreen(), settings: settings);
       case Settings:
-        return MaterialPageRoute(builder: (_) => SettingsScreen());
+        return MaterialPageRoute(builder: (_) => SettingsScreen(), settings: settings);
       case tareas:
-        return MaterialPageRoute(builder: (_) => TareasScreen());
+        return MaterialPageRoute(builder: (_) => TareasScreen(), settings: settings);
       case bienvenida:
-        return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+        return MaterialPageRoute(builder: (_) => const WelcomeScreen(), settings: settings);
       case details_project:
-      return MaterialPageRoute(builder: (_) => DetailsProjectScreen(projectData: {}, projectId: '',));       
+        return MaterialPageRoute(
+          builder: (_) => DetailsProjectScreen(projectData: {}, projectId: '',),
+          settings: settings,
+        );       
       default:
-        return MaterialPageRoute(builder: (_) => const Login());
+        return MaterialPageRoute(builder: (_) => const Login(), settings: settings);
     }
   }
 }
