@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart'; // Para interactuar con Firestore (base de datos).
-import 'package:firebase_auth/firebase_auth.dart'; // Para autenticación de usuarios.
+import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:flutter/material.dart'; // Librería principal de Flutter para UI.
-import '../../services/firestore_service.dart'; // Servicio para operaciones de base de datos.
-import 'widgets/details_task.dart'; // Widget para ver detalles de una tarea.
+import '../../services/firestore_service.dart'; 
+import 'widgets/details_task.dart'; 
 
 class DetailsPhaseScreen extends StatefulWidget {
   final Map<String, dynamic> phaseData; // Datos de la fase actual.
