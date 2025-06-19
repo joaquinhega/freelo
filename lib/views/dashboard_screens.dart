@@ -14,25 +14,20 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  // Define a consistent color palette based on green and white
-  static const Color primaryGreen = Color(0xFF2E7D32); // Deep Green (from logo)
-  static const Color lightGreen = Color(0xFFDCE7D6); // Very light green for subtle backgrounds/accents
-  static const Color whiteColor = Colors.white; // Pure white
-  static const Color offWhite = Color(0xFFF8F8F8); // Slightly off-white for background
-  static const Color darkGrey = Color(0xFF333333); // Dark grey for primary text
-  static const Color mediumGrey = Color(0xFF757575); // Medium grey for secondary text
-  static const Color accentBlue = Color(0xFF2196F3); // A touch of blue for emphasis (e.g., info icons)
-  static const Color warningOrange = Color(0xFFFF9800); // Orange for warnings
-  static const Color softGreenGradientStart = Color(0xFF4CAF50); // Lighter green for gradients
-  static const Color softGreenGradientEnd = Color(0xFF8BC34A); // Even lighter green for gradients
-
+  static const Color primaryGreen = Color(0xFF2E7D32);
+  static const Color lightGreen = Color(0xFFDCE7D6);
+  static const Color whiteColor = Colors.white;
+  static const Color offWhite = Color(0xFFF8F8F8);
+  static const Color darkGrey = Color(0xFF333333);
+  static const Color mediumGrey = Color(0xFF757575);
+  static const Color warningOrange = Color(0xFFFF9800);
+  static const Color softGreenGradientStart = Color(0xFF4CAF50);
 
   Future<String> _getUserName() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return 'Usuario';
 
     try {
-      // Intenta obtener el nombre desde profile/freelancerDetails
       final profileDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -47,7 +42,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
 
-      // Si no existe, intenta con el campo 'nombre' en el documento principal
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -64,7 +58,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       print("Error obteniendo nombre de Firestore: $e");
     }
 
-    // Fallbacks
     if (user.displayName != null && user.displayName!.isNotEmpty) {
       return user.displayName!;
     }
@@ -112,7 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding:
-              const EdgeInsets.all(20), // Increased padding for better spacing
+              const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -123,21 +116,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   return Text(
                     'Hola, $name 👋',
                     style: const TextStyle(
-                      fontSize: 32, // Even larger and more prominent
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: darkGrey,
-                      fontFamily: 'Montserrat', // A modern, clean font
+                      fontFamily: 'Montserrat',
                     ),
                   );
                 },
               ),
-              const SizedBox(height: 12), // Increased spacing
+              const SizedBox(height: 12),
               const WorkTimer(),
-              const SizedBox(height: 30), // More vertical space
-
-              // Active Tasks Section
+              const SizedBox(height: 30),
               _sectionCard(
-                // Added a gradient background to the card for a more dynamic look
                 gradient: const LinearGradient(
                   colors: [whiteColor, lightGreen],
                   begin: Alignment.topLeft,
@@ -149,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const Text(
                       'Tareas activas',
                       style: TextStyle(
-                        fontSize: 20, // Slightly larger title
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: darkGrey,
                         fontFamily: 'Montserrat',
@@ -191,15 +181,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           children: [
                             for (var task in tasks)
                               Card(
-                                elevation: 4, // More pronounced shadow for cards
+                                elevation: 4,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15), // More rounded corners
+                                  borderRadius: BorderRadius.circular(15),
                                 ),
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 0,
                                     vertical:
-                                        10), // Adjusted vertical margin
-                                child: InkWell( // Added InkWell for ripple effect on tap
+                                        10),
+                                child: InkWell(
                                   onTap: () {
                                     showDialog(
                                       context: context,
@@ -225,7 +215,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                         as Map<String, dynamic>)['title'] ??
                                                     '',
                                                 style: const TextStyle(
-                                                  fontWeight: FontWeight.w700, // Bolder
+                                                  fontWeight: FontWeight.w700,
                                                   color: darkGrey,
                                                   fontSize: 16,
                                                 ),
@@ -254,7 +244,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    Center( // Center the button
+                    Center(
                       child: ElevatedButton.icon(
                         onPressed: () {
                           showDialog(
@@ -270,25 +260,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         icon: const Icon(Icons.add, size: 22),
                         label: const Text('Nueva tarea'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryGreen, // Use primary green
+                          backgroundColor: primaryGreen,
                           foregroundColor: whiteColor,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 25, vertical: 15), // Larger padding
+                              horizontal: 25, vertical: 15),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12), // More rounded
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           textStyle: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                               fontFamily: 'Montserrat'
                           ),
-                          elevation: 8, // Added shadow to button
+                          elevation: 8,
                           shadowColor: primaryGreen.withOpacity(0.4),
                         ).copyWith(
                           overlayColor: MaterialStateProperty.resolveWith<Color>(
                             (Set<MaterialState> states) {
                               if (states.contains(MaterialState.pressed)) {
-                                return whiteColor.withOpacity(0.2); // Ripple effect
+                                return whiteColor.withOpacity(0.2);
                               }
                               return primaryGreen;
                             },
@@ -300,8 +290,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Monthly Income Section
               _sectionCard(
                 color: whiteColor,
                 child: Column(
@@ -326,7 +314,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: warningOrange.withOpacity(0.1), // Light orange background
+                        color: warningOrange.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: warningOrange.withOpacity(0.3)),
                       ),
@@ -335,7 +323,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Icon(Icons.warning_amber_rounded,
                               size: 24,
                               color:
-                                  warningOrange), // Changed icon and color for warning
+                                  warningOrange),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -360,7 +348,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: _actionCard(
                         icon: Icons.receipt_long,
                         label: 'Ir a facturación',
-                        // Gradient for action card
                         gradient: const LinearGradient(
                           colors: [primaryGreen, softGreenGradientStart],
                           begin: Alignment.topCenter,
@@ -379,37 +366,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Not used in the improved UI, but kept for completeness based on original code
-  Widget _taskRow(IconData icon, String task, String time) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: primaryGreen),
-            const SizedBox(width: 8),
-            Text(task, style: const TextStyle(color: darkGrey)),
-          ],
-        ),
-        Text(time, style: const TextStyle(color: mediumGrey)),
-      ],
-    );
-  }
-
   Widget _sectionCard({required Widget child, Color? color, Gradient? gradient}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20), // Increased padding inside cards
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color, // Use color if gradient is not provided
-        gradient: gradient, // Use gradient if provided
-        borderRadius: BorderRadius.circular(20), // More rounded corners for sections
+        color: color,
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2), // Stronger shadow for better separation
+            color: Colors.grey.withOpacity(0.2),
             spreadRadius: 2,
             blurRadius: 10,
-            offset: const Offset(0, 5), // changes position of shadow
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -426,26 +396,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Gradient? gradient,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14), // Increased padding
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
       decoration: BoxDecoration(
         color: color,
-        gradient: gradient, // Use gradient for action cards
+        gradient: gradient,
         border: borderColor != null ? Border.all(color: borderColor) : null,
-        borderRadius: BorderRadius.circular(18), // More rounded corners
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.2),
             spreadRadius: 1,
             blurRadius: 8,
-            offset: const Offset(0, 4), // changes position of shadow
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: textColor ?? whiteColor, size: 24), // Larger icon
-          const SizedBox(width: 10), // Increased spacing
+          Icon(icon, color: textColor ?? whiteColor, size: 24),
+          const SizedBox(width: 10),
           Text(
             label,
             style: TextStyle(
@@ -494,10 +464,10 @@ class _WorkTimerState extends State<WorkTimer> {
   Widget build(BuildContext context) {
     final horas = _duracion.inHours;
     final minutos = _duracion.inMinutes % 60;
-    final segundos = _duracion.inSeconds % 60; // Show seconds for a more dynamic feel
+    final segundos = _duracion.inSeconds % 60;
     return Text(
       'Hoy trabajaste: ${horas > 0 ? '$horas h ' : ''}${minutos.toString().padLeft(2, '0')} m ${segundos.toString().padLeft(2, '0')} s',
-      style: TextStyle(color: _DashboardScreenState.mediumGrey, fontSize: 16, fontFamily: 'Roboto'), // Changed font
+      style: TextStyle(color: _DashboardScreenState.mediumGrey, fontSize: 16, fontFamily: 'Roboto'),
     );
   }
 }

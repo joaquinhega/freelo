@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:myapp/services/auth_service.dart';
-import 'package:myapp/services/firestore_service.dart';
 import '../routes/routes.dart';
 
 // Pantalla de registro de usuario con email/contraseña y Google Sign-In

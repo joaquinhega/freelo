@@ -41,7 +41,6 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
   static const Color mediumGrey = Color(0xFF616161); 
   static const Color errorRed = Color(0xFFD32F2F); 
   static const Color completedOrange = Color(0xFFF57C00); 
-  static const Color softGrey = Color(0xFFE0E0E0); 
 
   @override
   void initState() {
@@ -254,7 +253,6 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
   Widget build(BuildContext context) {
     final phaseName = _nameController.text;
     final phaseDescription = _descController.text;
-    final phaseDate = _dateController.text; 
 
     return Scaffold(
       appBar: AppBar(

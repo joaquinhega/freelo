@@ -2,40 +2,42 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class FirestoreService {
+  // Variables para llamar a servicios de Firestore y FirebaseAuth
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
  
-Future<void> addTask({
-  required String title,
-  required String description,
-  required String project,
-  required DateTime fecha,
-  String? phase,
-  required String projectId, 
-}) async {
-  final user = _auth.currentUser;
-  if (user == null) {
-    print('[firestore_service] No user logged in para addTask');
-    return;
+  //Agregar una tarea
+  Future<void> addTask({
+    required String title,
+    required String description,
+    required String project,
+    required DateTime fecha,
+    String? phase,
+    required String projectId, 
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      print('[firestore_service] No user logged in para addTask');
+      return;
+    }
+    final data = {
+      'title': title,
+      'description': description,
+      'project': project,
+      'projectId': projectId, 
+      'fecha': fecha,
+      if (phase != null) 'phase': phase,
+      'timestamp': FieldValue.serverTimestamp(),
+      'isCompleted': false,
+    };
+    print('[firestore_service] Guardando tarea en users/${user.uid}/userTasks: $data');
+    await _db
+        .collection('users')
+        .doc(user.uid)
+        .collection('userTasks')
+        .add(data);
   }
-  final data = {
-    'title': title,
-    'description': description,
-    'project': project,
-    'projectId': projectId, // <-- guarda el projectId
-    'fecha': fecha,
-    if (phase != null) 'phase': phase,
-    'timestamp': FieldValue.serverTimestamp(),
-    'isCompleted': false,
-  };
-  print('[firestore_service] Guardando tarea en users/${user.uid}/userTasks: $data');
-  await _db
-      .collection('users')
-      .doc(user.uid)
-      .collection('userTasks')
-      .add(data);
-}
-  // Agrega esto en FirestoreService
+  // Editar una tarea
   Future<void> updateTask({
     required String taskId,
     required Map<String, dynamic> data,
@@ -53,7 +55,7 @@ Future<void> addTask({
         .doc(taskId)
         .update(data);
   }
-
+  // Eliminar una tarea
   Future<void> deleteTask(String taskId) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -68,6 +70,7 @@ Future<void> addTask({
         .doc(taskId)
         .delete();
   }
+  // Marcar tarea como completada o no completada
   Future<void> toggleTaskCompleted(String taskId, bool isCompleted) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -82,22 +85,21 @@ Future<void> addTask({
         .doc(taskId)
         .update({'isCompleted': isCompleted});
   }
-    // Obtener stream de tareas del usuario autenticado
-Stream<QuerySnapshot> getUserTasksStream() {
-  final user = _auth.currentUser;
-  if (user == null) {
-    print('[firestore_service] No user logged in para getUserTasksStream');
-    return const Stream.empty();
-  }
-  print('[firestore_service] Escuchando todas las tareas en users/${user.uid}/userTasks');
-  return _db
+  // Obtinene las tareas del usuario 
+  Stream<QuerySnapshot> getUserTasksStream() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      print('[firestore_service] No user logged in para getUserTasksStream');
+      return const Stream.empty();
+    }
+    print('[firestore_service] Escuchando todas las tareas en users/${user.uid}/userTasks');
+    return _db
       .collection('users')
       .doc(user.uid)
       .collection('userTasks')
       .orderBy('timestamp', descending: true)
       .snapshots();
-}
-
+  }
 
   // Guardar un nuevo proyecto
   Future<void> addProject({
@@ -135,7 +137,7 @@ Stream<QuerySnapshot> getUserTasksStream() {
     await docRef.update({'id': docRef.id});
   }
 
-  // Obtener stream de proyectos del usuario autenticado
+  // Obtiene los proyectos del usuario
   Stream<QuerySnapshot> getProjectsStream() {
     final user = _auth.currentUser;
     if (user == null) {
@@ -149,7 +151,7 @@ Stream<QuerySnapshot> getUserTasksStream() {
         .snapshots();
   }
 
-  // Obtener todos los nombres de proyectos del usuario autenticado
+  // Obtener todos los nombres de proyectos
   Future<List<Map<String, dynamic>>> getAllProjectsWithPhases() async {
     final user = _auth.currentUser;
     if (user == null) return [];
@@ -169,12 +171,12 @@ Stream<QuerySnapshot> getUserTasksStream() {
     }).toList();
   }
 
-  // Obtener el perfil del usuario como stream
+  // Obtener el perfil del usuario
   Stream<DocumentSnapshot> getUserProfileStream(String uid) {
     return _db.collection('users').doc(uid).snapshots();
   }
 
-  // Crear documento freelancerDetails al registrar usuario
+  // Crea detalles del perfil de freelancer
   Future<void> createFreelancerDetails(
     String userId, {
     required String firstName,
@@ -197,7 +199,7 @@ Stream<QuerySnapshot> getUserTasksStream() {
         });
   }
 
-  // Actualizar un proyecto existente
+  // Editar un proyecto 
   Future<void> updateProject({
     required String userId,
     required String projectId,
@@ -211,7 +213,7 @@ Stream<QuerySnapshot> getUserTasksStream() {
         .update(data);
   }
 
-  // Eliminar un proyecto existente
+  // Eliminar un proyecto
   Future<void> deleteProject({
     required String userId,
     required String projectId,

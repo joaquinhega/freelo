@@ -29,16 +29,13 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
 
   final PdfGeneratorService _pdfGeneratorService = PdfGeneratorService();
 
-  // Define a consistent color palette based on green and white
-  static const Color primaryGreen = Color(0xFF2E7D32); // Deep Green (from logo)
-  static const Color lightGreen = Color(0xFFE8F5E9); // Very light green for subtle backgrounds/accents
-  static const Color whiteColor = Colors.white; // Pure white
-  static const Color offWhite = Color(0xFFF0F2F5); // Slightly off-white for background
-  static const Color darkGrey = Color(0xFF212121); // Dark grey for primary text
-  static const Color mediumGrey = Color(0xFF616161); // Medium grey for secondary text
-  static const Color accentBlue = Color(0xFF2196F3); // A touch of blue for emphasis (e.g., info icons)
-  static const Color warningOrange = Color(0xFFFF9800); // Orange for warnings
-  static const Color errorRed = Color(0xFFD32F2F); // Red for errors/deletions
+  static const Color primaryGreen = Color(0xFF2E7D32);
+  static const Color whiteColor = Colors.white;
+  static const Color offWhite = Color(0xFFF0F2F5);
+  static const Color darkGrey = Color(0xFF212121);
+  static const Color mediumGrey = Color(0xFF616161);
+  static const Color accentBlue = Color(0xFF2196F3);
+  static const Color errorRed = Color(0xFFD32F2F);
 
   Map<String, String> _freelancerDetails = {
     'name': '',
@@ -86,15 +83,15 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
 
     if (doc.exists && doc.data() != null) {
       final data = doc.data()!;
-      _descripcionController.text = ''; // Clear default description if loading from project
+      _descripcionController.text = '';
       _fechaController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
 
       final client = data['client'] ?? {};
       _clienteController.text = client['nombre'] ?? '';
-      _empresaController.text = data['title'] ?? ''; // Project title as client company
+      _empresaController.text = data['title'] ?? '';
       _emailController.text = client['email'] ?? '';
       _telefonoClienteController.text = client['telefono'] ?? '';
-      _notasCondicionesController.text = ''; // Clear notes
+      _notasCondicionesController.text = '';
       setState(() {});
     }
   }
@@ -226,7 +223,6 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
         _showSnackBar('Error al generar o guardar el PDF: $e', isError: true);
       }
 
-      // Automatically pop the screen after a delay
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) {
           Navigator.of(context).pop();
@@ -244,9 +240,9 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
         action: actionLabel != null && onActionPressed != null
             ? SnackBarAction(label: actionLabel, onPressed: onActionPressed, textColor: whiteColor)
             : null,
-        behavior: SnackBarBehavior.floating, // Make it floating
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), // Rounded corners
-        margin: const EdgeInsets.all(10), // Margin from edges
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(10),
       ),
     );
   }
@@ -311,31 +307,31 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: offWhite, // Off-white background for the scaffold
+      backgroundColor: offWhite,
       appBar: AppBar(
-        leading: BackButton(color: darkGrey), // Dark grey back button
+        leading: BackButton(color: darkGrey),
         title: const Text(
           'Facturar',
           style: TextStyle(
-              color: darkGrey, // Dark grey title
+              color: darkGrey,
               fontWeight: FontWeight.bold,
-              fontSize: 28, // Larger title
-              fontFamily: 'Montserrat'), // Modern font
+              fontSize: 28,
+              fontFamily: 'Montserrat'),
           overflow: TextOverflow.ellipsis,
         ),
-        backgroundColor: whiteColor, // White app bar background
-        elevation: 4, // More pronounced shadow
+        backgroundColor: whiteColor,
+        elevation: 4,
         centerTitle: false,
-        toolbarHeight: 90, // Increased height
+        toolbarHeight: 90,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder( // Rounded bottom corners
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             bottom: Radius.circular(20),
           ),
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20), // Increased padding
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: ListView(
@@ -347,7 +343,6 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                 (value) =>
                     value == null || value.isEmpty ? 'Ingrese el número de factura' : null,
               ),
-
               _buildSectionTitle('Datos del Cliente'),
               _buildTextFormField(
                 _clienteController,
@@ -373,7 +368,6 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                 null,
                 keyboardType: TextInputType.phone,
               ),
-
               _buildSectionTitle('Fechas de la Factura'),
               _buildTextFormField(
                 _fechaController,
@@ -392,13 +386,13 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                       return Theme(
                         data: ThemeData.light().copyWith(
                           colorScheme: const ColorScheme.light(
-                            primary: primaryGreen, // Header background color
-                            onPrimary: whiteColor, // Header text color
-                            onSurface: darkGrey, // Body text color
+                            primary: primaryGreen,
+                            onPrimary: whiteColor,
+                            onSurface: darkGrey,
                           ),
                           textButtonTheme: TextButtonThemeData(
                             style: TextButton.styleFrom(
-                              foregroundColor: primaryGreen, // Button text color
+                              foregroundColor: primaryGreen,
                             ),
                           ),
                         ),
@@ -428,13 +422,13 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                       return Theme(
                         data: ThemeData.light().copyWith(
                           colorScheme: const ColorScheme.light(
-                            primary: primaryGreen, // Header background color
-                            onPrimary: whiteColor, // Header text color
-                            onSurface: darkGrey, // Body text color
+                            primary: primaryGreen,
+                            onPrimary: whiteColor,
+                            onSurface: darkGrey,
                           ),
                           textButtonTheme: TextButtonThemeData(
                             style: TextButton.styleFrom(
-                              foregroundColor: primaryGreen, // Button text color
+                              foregroundColor: primaryGreen,
                             ),
                           ),
                         ),
@@ -447,7 +441,6 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                   }
                 },
               ),
-
               _buildSectionTitle('Descripción del Servicio/Producto'),
               _buildTextFormField(
                 _descripcionController,
@@ -456,7 +449,6 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                     value == null || value.isEmpty ? 'Ingrese la descripción' : null,
                 maxLines: 3,
               ),
-
               _buildSectionTitle('Precio'),
               _buildTextFormField(
                 _precioController,
@@ -472,7 +464,6 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                 },
                 keyboardType: TextInputType.number,
               ),
-
               _buildSectionTitle('Notas / Condiciones Adicionales (Opcional)'),
               _buildTextFormField(
                 _notasCondicionesController,
@@ -480,23 +471,21 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                 null,
                 maxLines: 3,
               ),
-
               const SizedBox(height: 30),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _generarFactura,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryGreen, // Green button
-                    padding: const EdgeInsets.symmetric(vertical: 18), // Larger padding
+                    backgroundColor: primaryGreen,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15), // More rounded corners
+                      borderRadius: BorderRadius.circular(15),
                     ),
-                    elevation: 10, // More pronounced shadow
-                    shadowColor: primaryGreen.withOpacity(0.5), // Green shadow
+                    elevation: 10,
+                    shadowColor: primaryGreen.withOpacity(0.5),
                   ).copyWith(
-                    overlayColor: MaterialStateProperty.resolveWith<Color>( // Ripple effect
+                    overlayColor: MaterialStateProperty.resolveWith<Color>(
                       (Set<MaterialState> states) {
                         if (states.contains(MaterialState.pressed)) {
                           return whiteColor.withOpacity(0.3);
@@ -505,10 +494,10 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                       },
                     ),
                   ),
-                  icon: const Icon(Icons.picture_as_pdf, color: whiteColor, size: 28), // PDF icon
+                  icon: const Icon(Icons.picture_as_pdf, color: whiteColor, size: 28),
                   label: const Text(
                     'Generar y Guardar Factura',
-                    style: TextStyle(fontSize: 19, color: whiteColor, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'), // Larger, bold, Montserrat font
+                    style: TextStyle(fontSize: 19, color: whiteColor, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
                   ),
                 ),
               ),

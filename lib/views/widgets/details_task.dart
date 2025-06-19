@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'edit_tarea.dart';
 
 class DetailsTaskScreen extends StatelessWidget {
@@ -12,39 +11,40 @@ class DetailsTaskScreen extends StatelessWidget {
     required this.taskId,
   });
 
-  // Define a consistent color palette based on green and white
-  static const Color primaryGreen = Color(0xFF2E7D32); // Deep Green (from logo)
-  static const Color lightGreen = Color(0xFFE8F5E9); // Very light green for subtle backgrounds/accents
-  static const Color whiteColor = Colors.white; // Pure white
-  static const Color offWhite = Color(0xFFF0F2F5); // Slightly off-white for background
-  static const Color darkGrey = Color(0xFF212121); // Dark grey for primary text
-  static const Color mediumGrey = Color(0xFF616161); // Medium grey for secondary text
-  static const Color accentBlue = Color(0xFF2196F3); // A touch of blue for emphasis (e.g., info icons)
-  static const Color warningOrange = Color(0xFFFF9800); // Orange for warnings
-  static const Color softGrey = Color(0xFFE0E0E0); // Lighter grey for subtle backgrounds
+  // Colores de la app
+  static const Color primaryGreen = Color(0xFF2E7D32);
+  static const Color lightGreen = Color(0xFFE8F5E9); 
+  static const Color whiteColor = Colors.white; 
+  static const Color offWhite = Color(0xFFF0F2F5);
+  static const Color darkGrey = Color(0xFF212121); 
+  static const Color mediumGrey = Color(0xFF616161); 
+  static const Color accentBlue = Color(0xFF2196F3); 
+  static const Color warningOrange = Color(0xFFFF9800);
+  static const Color softGrey = Color(0xFFE0E0E0); 
 
   @override
   Widget build(BuildContext context) {
+    // Extraer datos de la tarea
     final title = taskData['title'] ?? 'Sin título';
     final description = taskData['description'] ?? 'Sin descripción';
     final project = taskData['project'] ?? 'Sin proyecto';
     final phase = taskData['phase'] ?? null;
 
-    return Dialog(
+    return Dialog( // Modal para mostrar los detalles de la tarea
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(24),
-      child: Material(
-        color: whiteColor, // White background for the dialog
-        borderRadius: BorderRadius.circular(24), // More rounded corners
-        elevation: 10, // Added elevation for a lifted effect
-        shadowColor: Colors.black.withOpacity(0.3), // More prominent shadow
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(28.0), // Increased padding
-            child: Column(
+      child: Material( // Aplica estilos
+        color: whiteColor, 
+        borderRadius: BorderRadius.circular(24), 
+        elevation: 10, 
+        shadowColor: Colors.black.withOpacity(0.3), 
+        child: SingleChildScrollView( // Permite scroll si el contenido es grande
+          child: Padding( //Permite agregar espacio alrededor del contenido
+            padding: const EdgeInsets.all(28.0), 
+            child: Column( // Contenido principal del modal
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: [//sirve para alinear los widgets en una fila
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -52,17 +52,17 @@ class DetailsTaskScreen extends StatelessWidget {
                       child: Text(
                         title,
                         style: const TextStyle(
-                          fontSize: 24, // Larger title
+                          fontSize: 24, 
                           fontWeight: FontWeight.bold,
-                          color: darkGrey, // Darker title color
-                          fontFamily: 'Montserrat', // Modern font
+                          color: darkGrey, 
+                          fontFamily: 'Montserrat',
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.edit, size: 26, color: primaryGreen), // Larger icon, green color
-                      tooltip: 'Editar tarea', // Tooltip for better UX
+                      icon: const Icon(Icons.edit, size: 26, color: primaryGreen), 
+                      tooltip: 'Editar tarea', 
                       onPressed: () async {
                         final result = await showDialog(
                           context: context,
@@ -73,25 +73,25 @@ class DetailsTaskScreen extends StatelessWidget {
                           ),
                         );
                         if (result == true && context.mounted) {
-                          Navigator.pop(context, true); // Cierra details si se editó
+                          Navigator.pop(context, true); 
                         }
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, size: 28, color: mediumGrey), // Larger close icon
-                      tooltip: 'Cerrar', // Tooltip for better UX
+                      icon: const Icon(Icons.close, size: 28, color: mediumGrey), 
+                      tooltip: 'Cerrar', 
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12), // Increased spacing
+                const SizedBox(height: 12),
                 Text(
                   project,
                   style: const TextStyle(
-                    fontSize: 17, // Larger font size
-                    color: mediumGrey, // Medium grey for project
-                    fontFamily: 'Roboto', // Consistent font
-                    fontWeight: FontWeight.w500, // Slightly bolder
+                    fontSize: 17, 
+                    color: mediumGrey, 
+                    fontFamily: 'Roboto', 
+                    fontWeight: FontWeight.w500, 
                   ),
                 ),
                 if (phase != null && phase.toString().isNotEmpty) ...[
@@ -99,20 +99,20 @@ class DetailsTaskScreen extends StatelessWidget {
                   Text(
                     'Fase: $phase',
                     style: const TextStyle(
-                      fontSize: 16, // Consistent font size
-                      color: mediumGrey, // Medium grey for phase
-                      fontFamily: 'Roboto', // Consistent font
+                      fontSize: 16, 
+                      color: mediumGrey,
+                      fontFamily: 'Roboto',
                     ),
                   ),
                 ],
-                const SizedBox(height: 20), // More vertical space
+                const SizedBox(height: 20), 
                 Container(
-                  padding: const EdgeInsets.all(16), // Increased padding
+                  padding: const EdgeInsets.all(16), 
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: softGrey, // Lighter grey background
-                    borderRadius: BorderRadius.circular(12), // More rounded corners
-                    border: Border.all(color: lightGreen.withOpacity(0.5)), // Subtle border
+                    color: softGrey, 
+                    borderRadius: BorderRadius.circular(12), 
+                    border: Border.all(color: lightGreen.withOpacity(0.5)), 
                   ),
                   child: Text(
                     description,

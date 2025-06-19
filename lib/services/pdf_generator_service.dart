@@ -7,7 +7,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:universal_html/html.dart' as html;
 
 class PdfGeneratorService {
+  //Genera un PDF con la plantilla de factura
   Future<Uint8List> generateInvoicePdf({
+    // Parámetros para factura extraidos de bbdd
     required String invoiceNumber,
     required String clientName,
     required String clientCompany,
@@ -21,6 +23,7 @@ class PdfGeneratorService {
     required Map<String, String> freelancerDetails,
 
   }) async {
+    // Crea el documento PDF
     final pdf = pw.Document();
     final fontData = await rootBundle.load("assets/fonts/OpenSans-Regular.ttf");
     final ttf = pw.Font.ttf(fontData);
@@ -115,7 +118,8 @@ class PdfGeneratorService {
 
     return pdf.save();
   }
-
+  
+  // Guarda el PDF en el dispositivo o lo descarga en la web
   Future<dynamic> savePdfToDevice(Uint8List pdfBytes, String filename) async {
     if (kIsWeb) {
       final blob = html.Blob([pdfBytes], 'application/pdf');

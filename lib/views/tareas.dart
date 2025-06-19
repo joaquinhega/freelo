@@ -15,17 +15,14 @@ class TareasScreen extends StatefulWidget {
 class _TareasScreenState extends State<TareasScreen> {
   final FirestoreService _firestoreService = FirestoreService();
 
-  // Define a consistent color palette based on green and white
-  static const Color primaryGreen = Color(0xFF2E7D32); // Deep Green (from logo)
-  static const Color lightGreen = Color(0xFFE8F5E9); // Very light green for subtle backgrounds/accents
-  static const Color whiteColor = Colors.white; // Pure white
-  static const Color offWhite = Color(0xFFF0F2F5); // Slightly off-white for background
-  static const Color darkGrey = Color(0xFF212121); // Dark grey for primary text
-  static const Color mediumGrey = Color(0xFF616161); // Medium grey for secondary text
-  static const Color errorRed = Color(0xFFD32F2F); // Red for errors/deletions
-  static const Color completedOrange = Color(0xFFF57C00); // Orange for completed/undo
-  static const Color softGreenGradientStart = Color(0xFF4CAF50); // Lighter green for gradients
-  static const Color softGreenGradientEnd = Color(0xFF8BC34A); // Even lighter green for gradients
+  static const Color primaryGreen = Color(0xFF2E7D32);
+  static const Color lightGreen = Color(0xFFE8F5E9);
+  static const Color whiteColor = Colors.white;
+  static const Color offWhite = Color(0xFFF0F2F5);
+  static const Color darkGrey = Color(0xFF212121);
+  static const Color mediumGrey = Color(0xFF616161);
+  static const Color errorRed = Color(0xFFD32F2F);
+  static const Color completedOrange = Color(0xFFF57C00);
 
 
   @override
@@ -36,19 +33,19 @@ class _TareasScreenState extends State<TareasScreen> {
         title: const Text(
           'Tareas',
           style: TextStyle(
-            color: darkGrey, // AppBar title color
+            color: darkGrey,
             fontWeight: FontWeight.bold,
-            fontSize: 28, // Larger app bar title for more impact
-            fontFamily: 'Montserrat', // Modern font for titles
+            fontSize: 28,
+            fontFamily: 'Montserrat',
           ),
         ),
         automaticallyImplyLeading: false,
-        backgroundColor: whiteColor, // White app bar background
-        elevation: 4, // More pronounced shadow for app bar
-        centerTitle: false, // Align title to start
-        toolbarHeight: 90, // Increase app bar height for better spacing
-        surfaceTintColor: Colors.transparent, // Remove default surface tint
-        shape: const RoundedRectangleBorder( // Rounded bottom corners for app bar
+        backgroundColor: whiteColor,
+        elevation: 4,
+        centerTitle: false,
+        toolbarHeight: 90,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             bottom: Radius.circular(20),
           ),
@@ -67,15 +64,15 @@ class _TareasScreenState extends State<TareasScreen> {
             ),
           );
         },
-        backgroundColor: primaryGreen, // FAB color
-        foregroundColor: whiteColor, // FAB icon color
+        backgroundColor: primaryGreen,
+        foregroundColor: whiteColor,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0), // Slightly rounded FAB
+          borderRadius: BorderRadius.circular(15.0),
         ),
-        elevation: 8, // Added shadow to FAB
-        highlightElevation: 12, // More elevation on press
-        splashColor: lightGreen, // Splash color on press
-        child: const Icon(Icons.add, size: 30), // Larger icon
+        elevation: 8,
+        highlightElevation: 12,
+        splashColor: lightGreen,
+        child: const Icon(Icons.add, size: 30),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestoreService.getUserTasksStream(),
@@ -87,7 +84,7 @@ class _TareasScreenState extends State<TareasScreen> {
             return Center(
               child: Text(
                 'No tienes tareas aún.',
-                style: TextStyle(color: mediumGrey, fontSize: 18, fontStyle: FontStyle.italic), // Larger and italic
+                style: TextStyle(color: mediumGrey, fontSize: 18, fontStyle: FontStyle.italic),
               ),
             );
           }
@@ -101,7 +98,7 @@ class _TareasScreenState extends State<TareasScreen> {
             return Center(
               child: Text(
                 'No tienes tareas pendientes.',
-                style: TextStyle(color: mediumGrey, fontSize: 18, fontStyle: FontStyle.italic), // Larger and italic
+                style: TextStyle(color: mediumGrey, fontSize: 18, fontStyle: FontStyle.italic),
               ),
             );
           }
@@ -110,7 +107,7 @@ class _TareasScreenState extends State<TareasScreen> {
             children: [
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15), // Increased padding for the list
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     final task = tasks[index];
@@ -118,13 +115,13 @@ class _TareasScreenState extends State<TareasScreen> {
                     final taskId = task.id;
 
                     return Card(
-                      elevation: 6, // More pronounced shadow for cards
+                      elevation: 6,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15), // More rounded corners
+                        borderRadius: BorderRadius.circular(15),
                       ),
-                      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 10), // Adjusted margin
-                      color: whiteColor, // Card background color
-                      child: InkWell( // Added InkWell for ripple effect on tap
+                      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
+                      color: whiteColor,
+                      child: InkWell(
                         onTap: () {
                           showDialog(
                             context: context,
@@ -136,7 +133,7 @@ class _TareasScreenState extends State<TareasScreen> {
                         },
                         borderRadius: BorderRadius.circular(15),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15), // Increased padding
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
                           child: Row(
                             children: [
                               Expanded(
@@ -146,19 +143,19 @@ class _TareasScreenState extends State<TareasScreen> {
                                     Text(
                                       taskData['title'] ?? '',
                                       style: const TextStyle(
-                                        fontWeight: FontWeight.w700, // Bolder title
-                                        fontSize: 18, // Larger font size
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 18,
                                         color: darkGrey,
-                                        fontFamily: 'Montserrat', // Consistent font
+                                        fontFamily: 'Montserrat',
                                       ),
                                     ),
-                                    const SizedBox(height: 6), // Increased spacing
+                                    const SizedBox(height: 6),
                                     Text(
                                       taskData['project'] ?? '',
                                       style: const TextStyle(
-                                        fontSize: 15, // Consistent font size
+                                        fontSize: 15,
                                         color: mediumGrey,
-                                        fontFamily: 'Roboto', // Consistent font
+                                        fontFamily: 'Roboto',
                                       ),
                                     ),
                                   ],
@@ -168,7 +165,7 @@ class _TareasScreenState extends State<TareasScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.delete, color: errorRed, size: 26), // Larger icon, error color
+                                    icon: const Icon(Icons.delete, color: errorRed, size: 26),
                                     tooltip: 'Eliminar tarea',
                                     onPressed: () async {
                                       final confirm = await showDialog<bool>(
@@ -187,9 +184,9 @@ class _TareasScreenState extends State<TareasScreen> {
                                             ),
                                           ],
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(15), // More rounded dialog
+                                            borderRadius: BorderRadius.circular(15),
                                           ),
-                                          elevation: 10, // Added shadow to dialog
+                                          elevation: 10,
                                         ),
                                       );
                                       if (confirm == true) {
@@ -199,9 +196,9 @@ class _TareasScreenState extends State<TareasScreen> {
                                   ),
                                   IconButton(
                                     icon: Icon(
-                                      taskData['isCompleted'] == true ? Icons.undo : Icons.check_circle_outline, // Changed icon for completed state
-                                      color: taskData['isCompleted'] == true ? completedOrange : primaryGreen, // Dynamic color for check/undo
-                                      size: 26, // Larger icon
+                                      taskData['isCompleted'] == true ? Icons.undo : Icons.check_circle_outline,
+                                      color: taskData['isCompleted'] == true ? completedOrange : primaryGreen,
+                                      size: 26,
                                     ),
                                     tooltip: taskData['isCompleted'] == true
                                         ? 'Marcar como pendiente'

@@ -16,19 +16,13 @@ class _ClientesScreenState extends State<ClientesScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   late Stream<QuerySnapshot> projectsStream;
 
-  // Define a consistent color palette based on green and white
-  static const Color primaryGreen = Color(0xFF2E7D32); // Deep Green (from logo)
-  static const Color lightGreen = Color(0xFFE8F5E9); // Very light green for subtle backgrounds/accents
-  static const Color whiteColor = Colors.white; // Pure white
-  static const Color offWhite = Color(0xFFF0F2F5); // Slightly off-white for background
-  static const Color darkGrey = Color(0xFF212121); // Dark grey for primary text
-  static const Color mediumGrey = Color(0xFF616161); // Medium grey for secondary text
-  static const Color accentBlue = Color(0xFF2196F3); // A touch of blue for emphasis (e.g., info icons)
-  static const Color warningOrange = Color(0xFFFF9800); // Orange for warnings
-  static const Color errorRed = Color(0xFFD32F2F); // Red for errors
-  static const Color softGreenGradientStart = Color(0xFF4CAF50); // Lighter green for gradients
-  static const Color softGreenGradientEnd = Color(0xFF8BC34A); // Even lighter green for gradients
-
+  static const Color primaryGreen = Color(0xFF2E7D32);
+  static const Color lightGreen = Color(0xFFE8F5E9); 
+  static const Color whiteColor = Colors.white;
+  static const Color offWhite = Color(0xFFF0F2F5);
+  static const Color darkGrey = Color(0xFF212121);
+  static const Color mediumGrey = Color(0xFF616161);
+  static const Color errorRed = Color(0xFFD32F2F); 
 
   @override
   void initState() {
@@ -44,19 +38,18 @@ class _ClientesScreenState extends State<ClientesScreen> {
         title: const Text(
           'Proyectos',
           style: TextStyle(
-            color: darkGrey, // AppBar title color
             fontWeight: FontWeight.bold,
-            fontSize: 28, // Larger app bar title for more impact
-            fontFamily: 'Montserrat', // Modern font for titles
+            fontSize: 28,
+            fontFamily: 'Montserrat', 
           ),
         ),
         automaticallyImplyLeading: false,
-        backgroundColor: whiteColor, // White app bar background
-        elevation: 4, // More pronounced shadow for app bar
-        centerTitle: false, // Align title to start
-        toolbarHeight: 90, // Increase app bar height for better spacing
-        surfaceTintColor: Colors.transparent, // Remove default surface tint
-        shape: const RoundedRectangleBorder( // Rounded bottom corners for app bar
+        backgroundColor: whiteColor, 
+        elevation: 4,
+        centerTitle: false,
+        toolbarHeight: 90,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             bottom: Radius.circular(20),
           ),
@@ -68,16 +61,16 @@ class _ClientesScreenState extends State<ClientesScreen> {
           Navigator.push(context,
               MaterialPageRoute(builder: (context) => const NewClientScreen()));
         },
-        backgroundColor: primaryGreen, // FAB color
-        foregroundColor: whiteColor, // FAB icon color
+        backgroundColor: primaryGreen, 
+        foregroundColor: whiteColor,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0), // Slightly rounded FAB
+          borderRadius: BorderRadius.circular(15.0),
         ),
-        elevation: 8, // Added shadow to FAB
-        highlightElevation: 12, // More elevation on press
-        splashColor: lightGreen, // Splash color on press
+        elevation: 8, 
+        highlightElevation: 12, 
+        splashColor: lightGreen,
         tooltip: 'Agregar Proyecto',
-        child: const Icon(Icons.add, size: 30), // Larger icon
+        child: const Icon(Icons.add, size: 30), 
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: projectsStream,
@@ -88,28 +81,28 @@ class _ClientesScreenState extends State<ClientesScreen> {
           if (snapshot.hasError) {
             return Center(
                 child: Text('Error al cargar proyectos: ${snapshot.error}',
-                    style: TextStyle(color: errorRed, fontSize: 18, fontFamily: 'Roboto'))); // Using errorRed, larger font
+                    style: TextStyle(color: errorRed, fontSize: 18, fontFamily: 'Roboto'))); 
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(
                 child: Text('No hay proyectos aún.',
-                    style: TextStyle(color: mediumGrey, fontSize: 18, fontStyle: FontStyle.italic))); // Larger and italic
+                    style: TextStyle(color: mediumGrey, fontSize: 18, fontStyle: FontStyle.italic))); 
           }
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15), // Increased padding for the list
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15), 
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
               final DocumentSnapshot document = snapshot.data!.docs[index];
               final data = document.data() as Map<String, dynamic>;
 
-              return Card( // Changed GestureDetector to Card with InkWell inside
-                elevation: 6, // More pronounced shadow for cards
+              return Card(
+                elevation: 6, 
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15), // More rounded corners
+                  borderRadius: BorderRadius.circular(15), 
                 ),
-                margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 10), // Adjusted margin
-                color: whiteColor, // Card background color
-                child: InkWell( // Added InkWell for ripple effect on tap
+                margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
+                color: whiteColor,
+                child: InkWell( 
                   onTap: () {
                     Navigator.push(
                       context,
@@ -123,32 +116,32 @@ class _ClientesScreenState extends State<ClientesScreen> {
                   },
                   borderRadius: BorderRadius.circular(15),
                   child: Padding(
-                    padding: const EdgeInsets.all(18), // Consistent padding
+                    padding: const EdgeInsets.all(18), 
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           data['title'] ?? 'Sin título',
                           style: const TextStyle(
-                              fontSize: 20, // Larger title
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: darkGrey, // Text color
-                              fontFamily: 'Montserrat'), // Modern font
+                              fontFamily: 'Montserrat'), 
                         ),
                         const SizedBox(height: 8),
                         Text(
                           data['description'] ?? 'Sin descripción',
                           style: TextStyle(
-                              fontSize: 15, // Consistent font size
-                              color: mediumGrey, // Text color
-                              fontFamily: 'Roboto'), // Consistent font
+                              fontSize: 15, 
+                              color: mediumGrey,
+                              fontFamily: 'Roboto'), 
                         ),
                         const SizedBox(height: 8),
                         if (data['date'] != null && data['date'].isNotEmpty)
                           Text(
                             'Fecha de Entrega: ${data['date']}',
                             style:
-                                const TextStyle(fontSize: 14, color: mediumGrey, fontFamily: 'Roboto'), // Text color
+                                const TextStyle(fontSize: 14, color: mediumGrey, fontFamily: 'Roboto'), 
                           ),
                         if (data['hasPhases'] == true &&
                             (data['phases'] as List).isNotEmpty)
@@ -161,11 +154,11 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: darkGrey,
-                                        fontFamily: 'Montserrat')), // Text color
+                                        fontFamily: 'Montserrat')), 
                                 ...(data['phases'] as List).map((phase) {
                                   return Text('  • ${phase['title']}',
                                       style: TextStyle(
-                                          color: mediumGrey, fontFamily: 'Roboto')); // Text color
+                                          color: mediumGrey, fontFamily: 'Roboto')); 
                                 }).toList(),
                               ],
                             ),

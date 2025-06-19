@@ -32,7 +32,6 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
     setState(() {
       _projects = projects;
     });
-    print('[new_tarea] Proyectos cargados: $_projects');
   }
 
   @override
@@ -43,19 +42,13 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   }
 
   Future<void> _saveTask() async {
-    print('[new_tarea] Intentando guardar tarea...');
-    print('Proyecto seleccionado: $_selectedProjectTitle');
-    print('Datos del proyecto seleccionado: $_selectedProjectData');
-    print('Fase seleccionada: $_selectedPhase');
 
     if (!_formKey.currentState!.validate() || _selectedProjectTitle == null) {
-      print('[new_tarea] Validación de formulario fallida');
       return;
     }
     if (_selectedProjectData != null &&
         _selectedProjectData!['hasPhases'] == true &&
         (_selectedPhase == null || _selectedPhase!.isEmpty)) {
-      print('[new_tarea] No se seleccionó fase en un proyecto que tiene fases');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Seleccione una fase'),
@@ -68,7 +61,6 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
     setState(() => _isLoading = true);
 
     try {
-      print('[new_tarea] Llamando a addTask...');
       await _firestoreService.addTask(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
@@ -79,18 +71,16 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
             : null,
             projectId: _selectedProjectData!['id'],
       );
-      print('[new_tarea] Tarea guardada correctamente');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('🎉 ¡Tarea creada con éxito!'),
+            content: Text('¡Tarea creada con éxito!'),
             backgroundColor: Colors.green,
           ),
         );
         Navigator.pop(context, true);
       }
     } catch (e) {
-      print('[new_tarea] Error al guardar tarea: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -170,8 +160,6 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                         _selectedProjectTitle = value;
                         _selectedProjectData = _projects.firstWhere((p) => p['title'] == value);
                         _selectedPhase = null;
-                        print('[new_tarea] Proyecto seleccionado: $_selectedProjectTitle');
-                        print('[new_tarea] Datos del proyecto: $_selectedProjectData');
                       });
                     },
                     validator: (value) =>
@@ -196,7 +184,6 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                       onChanged: (value) {
                         setState(() {
                           _selectedPhase = value;
-                          print('[new_tarea] Fase seleccionada: $_selectedPhase');
                         });
                       },
                       validator: (value) =>
@@ -223,22 +210,22 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : ElevatedButton(
-                            onPressed: _saveTask,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              backgroundColor: const Color(0xFF4CAF50),
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text(
-                              'Crear Tarea',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                          ),
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                      onPressed: _saveTask,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor: const Color(0xFF4CAF50),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text(
+                        'Crear Tarea',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                 ],
               ),

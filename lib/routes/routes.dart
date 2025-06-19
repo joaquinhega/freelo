@@ -1,3 +1,4 @@
+//importar todas las rutas que se van a utilizar para navegacion
 import 'package:flutter/material.dart';
 import '../views/login.dart';
 import '../views/dashboard_screens.dart';
@@ -15,6 +16,7 @@ import '../views/detailsProject.dart';
 import '../views/widgets/editProject.dart';
 
 class Routes{
+  //Define la carpeta de rutas
   static const String login = '/login';
   static const String dashboard = '/dashboard';
   static const String register = '/register';  
@@ -31,6 +33,7 @@ class Routes{
   static const String edit_project = '/edit_project';
 
   Route<dynamic> generateRoute(RouteSettings settings) {
+    //Switch con las rutas que se van a utilizar
     switch (settings.name) {
       case login:
         return MaterialPageRoute(builder: (_) => const Login(), settings: settings);

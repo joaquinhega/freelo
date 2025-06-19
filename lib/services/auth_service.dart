@@ -4,14 +4,13 @@ import 'package:google_sign_in/google_sign_in.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Ahora acepta el nombre como argumento
+  // Registrar nuevo usuario email y contraseña
   Future<User?> register(String email, String password, {String? nombre}) async {
     try {
       UserCredential cred = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      // Opcional: actualiza el displayName en Firebase Auth
       if (nombre != null && nombre.isNotEmpty) {
         await cred.user?.updateDisplayName(nombre);
       }
@@ -21,7 +20,7 @@ class AuthService {
       return null;
     }
   }
-
+  //Iniciar sesión con email y contraseña
   Future<User?> login(String email, String password) async {
     try {
       UserCredential cred = await _auth.signInWithEmailAndPassword(
@@ -34,7 +33,7 @@ class AuthService {
       return null;
     }
   }
-
+  // Iniciar sesión con Google
   Future<User?> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
@@ -51,11 +50,11 @@ class AuthService {
       return null;
     }
   }
-
+  // Cerrar sesión
   Future<void> logout() async {
     await _auth.signOut();
   }
-
+  // devuelve el usuario actual
   Future<User?> getCurrentUser() async {
     return _auth.currentUser;
   }

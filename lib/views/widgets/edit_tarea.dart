@@ -16,7 +16,8 @@ class EditTaskScreen extends StatefulWidget {
 }
 
 class _EditTaskScreenState extends State<EditTaskScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>(); // Clave para el formulario
+  // Controladores de texto para los campos del formulario
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
@@ -38,7 +39,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     _selectedPhase = widget.initialTaskData['phase'];
   }
 
-  Future<void> _loadProjects() async {
+  Future<void> _loadProjects() async { // Cargar proyectos desde Firestore
     final projects = await _firestoreService.getAllProjectsWithPhases();
     setState(() {
       _projects = projects;
@@ -49,30 +50,22 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
         );
       }
     });
-    print('[edit_task] Proyectos cargados: $_projects');
   }
 
   @override
-  void dispose() {
+  void dispose() { // Limpiar controladores al cerrar el widget
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
 
   Future<void> _saveTask() async {
-    print('[edit_task] Intentando editar tarea...');
-    print('Proyecto seleccionado: $_selectedProjectTitle');
-    print('Datos del proyecto seleccionado: $_selectedProjectData');
-    print('Fase seleccionada: $_selectedPhase');
-
     if (!_formKey.currentState!.validate() || _selectedProjectTitle == null) {
-      print('[edit_task] Validación de formulario fallida');
       return;
     }
     if (_selectedProjectData != null &&
         _selectedProjectData!['hasPhases'] == true &&
         (_selectedPhase == null || _selectedPhase!.isEmpty)) {
-      print('[edit_task] No se seleccionó fase en un proyecto que tiene fases');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Seleccione una fase'),
@@ -85,7 +78,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     setState(() => _isLoading = true);
 
     try {
-      print('[edit_task] Llamando a updateTask...');
       await _firestoreService.updateTask(
         taskId: widget.taskId,
         data: {
@@ -97,7 +89,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
               : null,
         },
       );
-      print('[edit_task] Tarea editada correctamente');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -166,7 +157,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                     controller: _titleController,
                     decoration: const InputDecoration(
                       labelText: 'Título',
-                      hintText: 'Animación 3D',
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) =>
@@ -188,8 +178,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                         _selectedProjectTitle = value;
                         _selectedProjectData = _projects.firstWhere((p) => p['title'] == value);
                         _selectedPhase = null;
-                        print('[edit_task] Proyecto seleccionado: $_selectedProjectTitle');
-                        print('[edit_task] Datos del proyecto: $_selectedProjectData');
                       });
                     },
                     validator: (value) =>
@@ -214,7 +202,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                       onChanged: (value) {
                         setState(() {
                           _selectedPhase = value;
-                          print('[edit_task] Fase seleccionada: $_selectedPhase');
                         });
                       },
                       validator: (value) =>
@@ -241,22 +228,22 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : ElevatedButton(
-                            onPressed: _saveTask,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              backgroundColor: const Color(0xFF4CAF50),
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text(
-                              'Guardar Cambios',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                          ),
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                      onPressed: _saveTask,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor: const Color(0xFF4CAF50),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text(
+                        'Guardar Cambios',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                 ],
               ),
