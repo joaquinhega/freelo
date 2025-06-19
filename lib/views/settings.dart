@@ -209,7 +209,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _aboutItem({
     required String title,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
     IconData? icon,
     String? subtitle,
   }) {
@@ -220,10 +220,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       leading: icon != null ? Icon(icon, color: Colors.grey[700]) : null,
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: subtitle != null ? Text(subtitle) : null,
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: onTap == null ? Colors.grey : Colors.black,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
+              style: TextStyle(color: onTap == null ? Colors.grey : Colors.black),
+            )
+          : null,
+      trailing: onTap == null
+          ? null
+          : const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
       onTap: onTap,
+      enabled: onTap != null,
     );
   }
 
@@ -239,7 +253,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          // Permitir edición para todos los usuarios (Google y email/contraseña)
           if (!_editing)
             IconButton(
               icon: const Icon(Icons.edit, color: Colors.black),
@@ -255,10 +268,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('Datos de facturación', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Datos del Usuario', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
           if (_editing) ...[
-            // Si es Google, los campos de nombre, apellido y email están deshabilitados
             _editTile('Nombre', _firstNameController, icon: Icons.person_outline, enabled: !_isGoogleLoggedIn),
             _editTile('Apellido', _lastNameController, icon: Icons.person_outline, enabled: !_isGoogleLoggedIn),
             _editTile('Correo electrónico', _emailController, icon: Icons.mail_outline, enabled: !_isGoogleLoggedIn),
@@ -294,7 +306,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : () {
                             setState(() {
                               _editing = false;
-                              // Restaurar valores originales
                               _firstNameController.text = freelancer['firstName'] ?? '';
                               _lastNameController.text = freelancer['lastName'] ?? '';
                               _emailController.text = freelancer['email'] ?? '';
@@ -326,7 +337,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 12),
           SwitchListTile(
             value: _notificaciones,
-            onChanged: null, // Deshabilitado
+            onChanged: null, 
             title: const Text('Notificaciones'),
             activeColor: Colors.green,
           ),
@@ -336,37 +347,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _aboutItem(
             title: 'Versión de la App',
             subtitle: '1.0.0 Beta',
-            onTap: () {},
+            onTap: null,
             icon: Icons.info_outline,
           ),
           const SizedBox(height: 8),
           _aboutItem(
             title: 'Términos y Condiciones',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Ver Términos y Condiciones')),
-              );
-            },
+            onTap: null,
             icon: Icons.description_outlined,
           ),
           const SizedBox(height: 8),
           _aboutItem(
             title: 'Políticas de privacidad',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Ver Políticas de privacidad')),
-              );
-            },
+            onTap: null,
             icon: Icons.policy_outlined,
           ),
           const SizedBox(height: 8),
           _aboutItem(
             title: 'Contacto de soporte',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Contactar soporte')),
-              );
-            },
+            onTap: null,
             icon: Icons.help_outline,
           ),
           const SizedBox(height: 40),

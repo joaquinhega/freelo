@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../views/login.dart';
 import '../views/dashboard_screens.dart';
 import '../views/register.dart';
-import '../views/new_tarea.dart';
+import '../views/widgets/new_tarea.dart';
 import '../views/calendar.dart';
 import '../views/clientes.dart';
 import '../views/estadisticas.dart';
@@ -12,6 +12,7 @@ import '../views/settings.dart';
 import '../views/tareas.dart';
 import '../views/bienvenida.dart';
 import '../views/detailsProject.dart';
+import '../views/widgets/editProject.dart';
 
 class Routes{
   static const String login = '/login';
@@ -27,6 +28,7 @@ class Routes{
   static const String tareas = '/tareas';
   static const String bienvenida = '/bienvenida';
   static const String details_project = '/details_project';
+  static const String edit_project = '/edit_project';
 
   Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -58,7 +60,13 @@ class Routes{
         return MaterialPageRoute(
           builder: (_) => DetailsProjectScreen(projectData: {}, projectId: '',),
           settings: settings,
-        );       
+        );
+      case edit_project:
+        final args = settings.arguments as Map<String, dynamic>? ?? {};
+        return MaterialPageRoute(
+          builder: (_) => EditProjectWidget(initialData: args['initialData'] ?? {}),
+          settings: settings,
+        );
       default:
         return MaterialPageRoute(builder: (_) => const Login(), settings: settings);
     }

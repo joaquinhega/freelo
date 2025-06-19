@@ -71,7 +71,7 @@ class PdfGeneratorService {
               ),              
               pw.SizedBox(height: 30),
               pw.Table.fromTextArray(
-                headers: ['Descripción', 'Precio Unitario', 'Total'],
+                headers: ['Desgit add .cripción', 'Precio Unitario', 'Total'],
                 data: [
                   [description, '\$${price.toStringAsFixed(2)}', '\$${price.toStringAsFixed(2)}'],
                 ],

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:myapp/routes/routes.dart';
 import 'dart:async';
 import 'widgets/Footer.dart';
-import 'new_tarea.dart'; // Asegúrate de que la ruta sea correcta
+import 'widgets/new_tarea.dart'; // Asegúrate de que la ruta sea correcta
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -125,20 +126,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 12),
                     TextButton.icon(
                       onPressed: () {
-                        showModalBottomSheet(
+                        showDialog(
                           context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                          ),
-                          builder: (context) => Padding(
-                            padding: EdgeInsets.only(
-                              bottom: MediaQuery.of(context).viewInsets.bottom,
-                            ),
-                            child: SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.85,
-                              child: const NewTaskScreen(),
-                            ),
+                          barrierDismissible: true,
+                          builder: (context) => Dialog(
+                            backgroundColor: Colors.transparent,
+                            insetPadding: const EdgeInsets.all(24),
+                            child: const NewTaskScreen(),
                           ),
                         );
                       },
