@@ -29,6 +29,17 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
 
   final PdfGeneratorService _pdfGeneratorService = PdfGeneratorService();
 
+  // Define a consistent color palette based on green and white
+  static const Color primaryGreen = Color(0xFF2E7D32); // Deep Green (from logo)
+  static const Color lightGreen = Color(0xFFE8F5E9); // Very light green for subtle backgrounds/accents
+  static const Color whiteColor = Colors.white; // Pure white
+  static const Color offWhite = Color(0xFFF0F2F5); // Slightly off-white for background
+  static const Color darkGrey = Color(0xFF212121); // Dark grey for primary text
+  static const Color mediumGrey = Color(0xFF616161); // Medium grey for secondary text
+  static const Color accentBlue = Color(0xFF2196F3); // A touch of blue for emphasis (e.g., info icons)
+  static const Color warningOrange = Color(0xFFFF9800); // Orange for warnings
+  static const Color errorRed = Color(0xFFD32F2F); // Red for errors/deletions
+
   Map<String, String> _freelancerDetails = {
     'name': '',
     'address': '',
@@ -44,11 +55,8 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
     super.didChangeDependencies();
     if (!_initialized) {
       final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      print('[facturacion] Arguments recibidos: $args');
-
       _projectId = args?['projectId'] as String?;
       final String? projectName = args?['projectName'];
-      print('[facturacion] projectId=$_projectId, projectName=$projectName');
 
       _fechaController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
       _fechaVencimientoController.text = DateFormat('dd/MM/yyyy').format(DateTime.now().add(const Duration(days: 30)));
@@ -65,32 +73,28 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
     }
   }
 
-Future<void> _loadProjectAndClientData(String projectId) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
-  print('[facturacion] Consultando Firestore para projectId=$projectId');
+  Future<void> _loadProjectAndClientData(String projectId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  final doc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('projects')
-      .doc(projectId)
-      .get();
-  print('[facturacion] Firestore doc.exists=${doc.exists}, data=${doc.data()}');
-
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('projects')
+        .doc(projectId)
+        .get();
 
     if (doc.exists && doc.data() != null) {
       final data = doc.data()!;
-      _descripcionController.text = '';
+      _descripcionController.text = ''; // Clear default description if loading from project
       _fechaController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
 
       final client = data['client'] ?? {};
-      print('[facturacion] Datos de cliente obtenidos: $client');
       _clienteController.text = client['nombre'] ?? '';
-      _empresaController.text = data['title'] ?? '';
+      _empresaController.text = data['title'] ?? ''; // Project title as client company
       _emailController.text = client['email'] ?? '';
       _telefonoClienteController.text = client['telefono'] ?? '';
-      _notasCondicionesController.text = '';
+      _notasCondicionesController.text = ''; // Clear notes
       setState(() {});
     }
   }
@@ -136,9 +140,7 @@ Future<void> _loadProjectAndClientData(String projectId) async {
     if (_formKey.currentState!.validate()) {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Usuario no autenticado'), backgroundColor: Colors.red),
-        );
+        _showSnackBar('Usuario no autenticado', isError: true);
         return;
       }
 
@@ -151,9 +153,7 @@ Future<void> _loadProjectAndClientData(String projectId) async {
           int.parse(partes[0]),
         );
       } catch (_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fecha de Facturación inválida (DD/MM/YYYY)'), backgroundColor: Colors.red),
-        );
+        _showSnackBar('Fecha de Facturación inválida (DD/MM/YYYY)', isError: true);
         return;
       }
 
@@ -166,44 +166,38 @@ Future<void> _loadProjectAndClientData(String projectId) async {
           int.parse(partes[0]),
         );
       } catch (_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fecha de Vencimiento inválida (DD/MM/YYYY)'), backgroundColor: Colors.red),
-        );
+        _showSnackBar('Fecha de Vencimiento inválida (DD/MM/YYYY)', isError: true);
         return;
       }
 
       double? precioParsed = double.tryParse(_precioController.text.trim());
       if (precioParsed == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Precio inválido'), backgroundColor: Colors.red),
-        );
+        _showSnackBar('Precio inválido', isError: true);
         return;
       }
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('facturas')
-          .add({
-            'numeroFactura': _numeroFacturaController.text.trim(),
-            'clienteNombre': _clienteController.text.trim(),
-            'clienteEmpresa': _empresaController.text.trim(),
-            'clienteEmail': _emailController.text.trim(),
-            'clienteTelefono': _telefonoClienteController.text.trim(),
-            'fechaFacturacion': fechaFactura,
-            'fechaVencimiento': fechaVencimiento,
-            'descripcionServicio': _descripcionController.text.trim(),
-            'precio': precioParsed,
-            'notasCondiciones': _notasCondicionesController.text.trim(),
-            'timestamp': FieldValue.serverTimestamp(),
-            'proyectoId': _projectId,
-          });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Factura guardada en la nube con éxito'), backgroundColor: Colors.green),
-      );
-
       try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('facturas')
+            .add({
+              'numeroFactura': _numeroFacturaController.text.trim(),
+              'clienteNombre': _clienteController.text.trim(),
+              'clienteEmpresa': _empresaController.text.trim(),
+              'clienteEmail': _emailController.text.trim(),
+              'clienteTelefono': _telefonoClienteController.text.trim(),
+              'fechaFacturacion': fechaFactura,
+              'fechaVencimiento': fechaVencimiento,
+              'descripcionServicio': _descripcionController.text.trim(),
+              'precio': precioParsed,
+              'notasCondiciones': _notasCondicionesController.text.trim(),
+              'timestamp': FieldValue.serverTimestamp(),
+              'proyectoId': _projectId,
+            });
+
+        _showSnackBar('Factura guardada en la nube con éxito', isError: false);
+
         final pdfBytes = await _pdfGeneratorService.generateInvoicePdf(
           invoiceNumber: _numeroFacturaController.text.trim(),
           clientName: _clienteController.text.trim(),
@@ -222,36 +216,17 @@ Future<void> _loadProjectAndClientData(String projectId) async {
         final savedFile = await _pdfGeneratorService.savePdfToDevice(pdfBytes, filename);
 
         if (kIsWeb) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('PDF generado y descargado en tu navegador'),
-              backgroundColor: Colors.blue,
-            ),
-          );
+          _showSnackBar('PDF generado y descargado en tu navegador', isError: false, isInfo: true);
         } else if (savedFile != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('PDF de factura guardado en ${savedFile.path}'),
-              backgroundColor: Colors.blue,
-              action: SnackBarAction(
-                label: 'Abrir',
-                onPressed: () {
-                  OpenFilex.open(savedFile.path);
-                },
-              ),
-            ),
-          );
+          _showSnackBar('PDF de factura guardado en ${savedFile.path}', isError: false, isInfo: true, actionLabel: 'Abrir', onActionPressed: () { OpenFilex.open(savedFile.path); });
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error al guardar el PDF de la factura'), backgroundColor: Colors.red),
-          );
+          _showSnackBar('Error al guardar el PDF de la factura', isError: true);
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al generar o guardar el PDF: $e'), backgroundColor: Colors.red),
-        );
+        _showSnackBar('Error al generar o guardar el PDF: $e', isError: true);
       }
 
+      // Automatically pop the screen after a delay
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) {
           Navigator.of(context).pop();
@@ -260,59 +235,152 @@ Future<void> _loadProjectAndClientData(String projectId) async {
     }
   }
 
+  void _showSnackBar(String message, {bool isError = false, bool isInfo = false, String? actionLabel, VoidCallback? onActionPressed}) {
+    Color backgroundColor = isError ? errorRed : (isInfo ? accentBlue : primaryGreen);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: whiteColor, fontFamily: 'Roboto')),
+        backgroundColor: backgroundColor,
+        action: actionLabel != null && onActionPressed != null
+            ? SnackBarAction(label: actionLabel, onPressed: onActionPressed, textColor: whiteColor)
+            : null,
+        behavior: SnackBarBehavior.floating, // Make it floating
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), // Rounded corners
+        margin: const EdgeInsets.all(10), // Margin from edges
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: darkGrey,
+          fontFamily: 'Montserrat',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextFormField(TextEditingController controller, String hintText, String? Function(String?)? validator, {TextInputType? keyboardType, int maxLines = 1, bool readOnly = false, VoidCallback? onTap}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        readOnly: readOnly,
+        onTap: onTap,
+        style: const TextStyle(color: darkGrey, fontFamily: 'Roboto'),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(color: mediumGrey.withOpacity(0.7)),
+          filled: true,
+          fillColor: whiteColor,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: mediumGrey.withOpacity(0.4), width: 1.5),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: mediumGrey.withOpacity(0.4), width: 1.5),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: primaryGreen, width: 2.0),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: errorRed, width: 2.0),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: errorRed, width: 2.0),
+          ),
+        ),
+        validator: validator,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Facturar')),
+      backgroundColor: offWhite, // Off-white background for the scaffold
+      appBar: AppBar(
+        leading: BackButton(color: darkGrey), // Dark grey back button
+        title: const Text(
+          'Facturar',
+          style: TextStyle(
+              color: darkGrey, // Dark grey title
+              fontWeight: FontWeight.bold,
+              fontSize: 28, // Larger title
+              fontFamily: 'Montserrat'), // Modern font
+          overflow: TextOverflow.ellipsis,
+        ),
+        backgroundColor: whiteColor, // White app bar background
+        elevation: 4, // More pronounced shadow
+        centerTitle: false,
+        toolbarHeight: 90, // Increased height
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder( // Rounded bottom corners
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20), // Increased padding
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              const Text('Número de Factura', style: TextStyle(fontWeight: FontWeight.bold)),
-              TextFormField(
-                controller: _numeroFacturaController,
-                decoration: const InputDecoration(hintText: 'Ej: 001/2024'),
-                validator: (value) =>
+              _buildSectionTitle('Número de Factura'),
+              _buildTextFormField(
+                _numeroFacturaController,
+                'Ej: 001/2024',
+                (value) =>
                     value == null || value.isEmpty ? 'Ingrese el número de factura' : null,
               ),
-              const SizedBox(height: 20),
 
-              const Text('Datos del Cliente', style: TextStyle(fontWeight: FontWeight.bold)),
-              TextFormField(
-                controller: _clienteController,
-                decoration: const InputDecoration(hintText: 'Nombre y Apellido del Cliente'),
-                validator: (value) =>
+              _buildSectionTitle('Datos del Cliente'),
+              _buildTextFormField(
+                _clienteController,
+                'Nombre y Apellido del Cliente',
+                (value) =>
                     value == null || value.isEmpty ? 'Ingrese el nombre del cliente' : null,
               ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _empresaController,
-                decoration: const InputDecoration(hintText: 'Empresa del Cliente (Opcional)'),
+              _buildTextFormField(
+                _empresaController,
+                'Empresa del Cliente (Opcional)',
+                null,
               ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(hintText: 'Email del Cliente'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) =>
+              _buildTextFormField(
+                _emailController,
+                'Email del Cliente',
+                (value) =>
                     value == null || value.isEmpty ? 'Ingrese el email del cliente' : null,
+                keyboardType: TextInputType.emailAddress,
               ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _telefonoClienteController,
-                decoration: const InputDecoration(hintText: 'Teléfono del Cliente (Opcional)'),
+              _buildTextFormField(
+                _telefonoClienteController,
+                'Teléfono del Cliente (Opcional)',
+                null,
                 keyboardType: TextInputType.phone,
               ),
-              const SizedBox(height: 20),
 
-              const Text('Fecha de Facturación', style: TextStyle(fontWeight: FontWeight.bold)),
-              TextFormField(
-                controller: _fechaController,
-                decoration: const InputDecoration(hintText: 'DD/MM/YYYY'),
-                validator: (value) =>
+              _buildSectionTitle('Fechas de la Factura'),
+              _buildTextFormField(
+                _fechaController,
+                'DD/MM/YYYY',
+                (value) =>
                     value == null || value.isEmpty ? 'Ingrese la fecha de facturación' : null,
+                readOnly: true,
                 onTap: () async {
                   FocusScope.of(context).requestFocus(FocusNode());
                   final picked = await showDatePicker(
@@ -320,20 +388,35 @@ Future<void> _loadProjectAndClientData(String projectId) async {
                     initialDate: DateTime.now(),
                     firstDate: DateTime(2020),
                     lastDate: DateTime(2100),
+                    builder: (context, child) {
+                      return Theme(
+                        data: ThemeData.light().copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: primaryGreen, // Header background color
+                            onPrimary: whiteColor, // Header text color
+                            onSurface: darkGrey, // Body text color
+                          ),
+                          textButtonTheme: TextButtonThemeData(
+                            style: TextButton.styleFrom(
+                              foregroundColor: primaryGreen, // Button text color
+                            ),
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
                   );
                   if (picked != null) {
                     _fechaController.text = DateFormat('dd/MM/yyyy').format(picked);
                   }
                 },
               ),
-              const SizedBox(height: 10),
-
-              const Text('Fecha de Vencimiento', style: TextStyle(fontWeight: FontWeight.bold)),
-              TextFormField(
-                controller: _fechaVencimientoController,
-                decoration: const InputDecoration(hintText: 'DD/MM/YYYY'),
-                validator: (value) =>
+              _buildTextFormField(
+                _fechaVencimientoController,
+                'DD/MM/YYYY',
+                (value) =>
                     value == null || value.isEmpty ? 'Ingrese la fecha de vencimiento' : null,
+                readOnly: true,
                 onTap: () async {
                   FocusScope.of(context).requestFocus(FocusNode());
                   final picked = await showDatePicker(
@@ -341,30 +424,44 @@ Future<void> _loadProjectAndClientData(String projectId) async {
                     initialDate: DateTime.now().add(const Duration(days: 30)),
                     firstDate: DateTime(2020),
                     lastDate: DateTime(2100),
+                    builder: (context, child) {
+                      return Theme(
+                        data: ThemeData.light().copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: primaryGreen, // Header background color
+                            onPrimary: whiteColor, // Header text color
+                            onSurface: darkGrey, // Body text color
+                          ),
+                          textButtonTheme: TextButtonThemeData(
+                            style: TextButton.styleFrom(
+                              foregroundColor: primaryGreen, // Button text color
+                            ),
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
                   );
                   if (picked != null) {
                     _fechaVencimientoController.text = DateFormat('dd/MM/yyyy').format(picked);
                   }
                 },
               ),
-              const SizedBox(height: 20),
 
-              const Text('Descripción del Servicio/Producto', style: TextStyle(fontWeight: FontWeight.bold)),
-              TextFormField(
-                controller: _descripcionController,
-                maxLines: 3,
-                decoration: const InputDecoration(hintText: 'Descripción detallada de la factura'),
-                validator: (value) =>
+              _buildSectionTitle('Descripción del Servicio/Producto'),
+              _buildTextFormField(
+                _descripcionController,
+                'Descripción detallada de la factura',
+                (value) =>
                     value == null || value.isEmpty ? 'Ingrese la descripción' : null,
+                maxLines: 3,
               ),
-              const SizedBox(height: 10),
 
-              const Text('Precio', style: TextStyle(fontWeight: FontWeight.bold)),
-              TextFormField(
-                controller: _precioController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: 'Ej: 250.00'),
-                validator: (value) {
+              _buildSectionTitle('Precio'),
+              _buildTextFormField(
+                _precioController,
+                'Ej: 250.00',
+                (value) {
                   if (value == null || value.isEmpty) {
                     return 'Ingrese el precio';
                   }
@@ -373,31 +470,45 @@ Future<void> _loadProjectAndClientData(String projectId) async {
                   }
                   return null;
                 },
+                keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 20),
 
-              const Text('Notas / Condiciones Adicionales (Opcional)', style: TextStyle(fontWeight: FontWeight.bold)),
-              TextFormField(
-                controller: _notasCondicionesController,
+              _buildSectionTitle('Notas / Condiciones Adicionales (Opcional)'),
+              _buildTextFormField(
+                _notasCondicionesController,
+                'Ej: Condiciones de pago, detalles bancarios, etc.',
+                null,
                 maxLines: 3,
-                decoration: const InputDecoration(hintText: 'Ej: Condiciones de pago, detalles bancarios, etc.'),
               ),
+
               const SizedBox(height: 30),
 
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: ElevatedButton.icon(
                   onPressed: _generarFactura,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: primaryGreen, // Green button
+                    padding: const EdgeInsets.symmetric(vertical: 18), // Larger padding
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(15), // More rounded corners
+                    ),
+                    elevation: 10, // More pronounced shadow
+                    shadowColor: primaryGreen.withOpacity(0.5), // Green shadow
+                  ).copyWith(
+                    overlayColor: MaterialStateProperty.resolveWith<Color>( // Ripple effect
+                      (Set<MaterialState> states) {
+                        if (states.contains(MaterialState.pressed)) {
+                          return whiteColor.withOpacity(0.3);
+                        }
+                        return primaryGreen;
+                      },
                     ),
                   ),
-                  child: const Text(
+                  icon: const Icon(Icons.picture_as_pdf, color: whiteColor, size: 28), // PDF icon
+                  label: const Text(
                     'Generar y Guardar Factura',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
+                    style: TextStyle(fontSize: 19, color: whiteColor, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'), // Larger, bold, Montserrat font
                   ),
                 ),
               ),

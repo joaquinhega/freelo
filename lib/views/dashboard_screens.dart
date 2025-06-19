@@ -1,10 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:myapp/routes/routes.dart';
 import 'dart:async';
-import 'package:flutter/material.dart'; // Asegúrate de tener esta importación
+import 'package:flutter/material.dart';
 import 'widgets/Footer.dart';
-import 'widgets/new_tarea.dart'; // Asegúrate de que la ruta sea correcta
+import 'widgets/new_tarea.dart';
+import 'widgets/details_task.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,44 +14,57 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  // Define a consistent color palette based on green and white
+  static const Color primaryGreen = Color(0xFF2E7D32); // Deep Green (from logo)
+  static const Color lightGreen = Color(0xFFDCE7D6); // Very light green for subtle backgrounds/accents
+  static const Color whiteColor = Colors.white; // Pure white
+  static const Color offWhite = Color(0xFFF8F8F8); // Slightly off-white for background
+  static const Color darkGrey = Color(0xFF333333); // Dark grey for primary text
+  static const Color mediumGrey = Color(0xFF757575); // Medium grey for secondary text
+  static const Color accentBlue = Color(0xFF2196F3); // A touch of blue for emphasis (e.g., info icons)
+  static const Color warningOrange = Color(0xFFFF9800); // Orange for warnings
+  static const Color softGreenGradientStart = Color(0xFF4CAF50); // Lighter green for gradients
+  static const Color softGreenGradientEnd = Color(0xFF8BC34A); // Even lighter green for gradients
+
+
   Future<String> _getUserName() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return 'Usuario';
 
-    // Obtiene el nombre desde Firestore (perfil)
     try {
+      // Intenta obtener el nombre desde profile/freelancerDetails
+      final profileDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('profile')
+          .doc('freelancerDetails')
+          .get();
+
+      if (profileDoc.exists && profileDoc.data() != null) {
+        final firstName = profileDoc.data()!['firstName'] ?? '';
+        if (firstName.isNotEmpty) {
+          return firstName;
+        }
+      }
+
+      // Si no existe, intenta con el campo 'nombre' en el documento principal
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
 
       if (doc.exists && doc.data() != null) {
-        // Opción 1: Si el campo 'nombre' está directamente en el documento del usuario
-        if (doc.data()!.containsKey('nombre') && doc['nombre'] != null && doc['nombre'].toString().isNotEmpty) {
+        if (doc.data()!.containsKey('nombre') &&
+            doc['nombre'] != null &&
+            doc['nombre'].toString().isNotEmpty) {
           return doc['nombre'].toString();
-        }
-        // Opción 2: Si el nombre está en una subcolección 'profile' -> 'freelancerDetails'
-        final profileDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('profile')
-            .doc('freelancerDetails')
-            .get();
-
-        if (profileDoc.exists && profileDoc.data() != null) {
-          final firstName = profileDoc.data()!.containsKey('firstName') ? profileDoc['firstName'] : '';
-          final lastName = profileDoc.data()!.containsKey('lastName') ? profileDoc['lastName'] : '';
-          if (firstName.isNotEmpty || lastName.isNotEmpty) {
-            return '$firstName $lastName'.trim();
-          }
         }
       }
     } catch (e) {
-      // Ignorar errores de Firestore y continuar con las opciones de respaldo
       print("Error obteniendo nombre de Firestore: $e");
     }
 
-    // Si no hay nombre en Firestore (o hubo un error), usa displayName o email
+    // Fallbacks
     if (user.displayName != null && user.displayName!.isNotEmpty) {
       return user.displayName!;
     }
@@ -94,11 +107,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: offWhite,
       bottomNavigationBar: const Footer(currentIndex: 0),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding:
+              const EdgeInsets.all(20), // Increased padding for better spacing
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -108,84 +122,188 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   final name = snapshot.data ?? 'Usuario';
                   return Text(
                     'Hola, $name 👋',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 32, // Even larger and more prominent
+                      fontWeight: FontWeight.bold,
+                      color: darkGrey,
+                      fontFamily: 'Montserrat', // A modern, clean font
+                    ),
                   );
                 },
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 12), // Increased spacing
               const WorkTimer(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30), // More vertical space
+
+              // Active Tasks Section
               _sectionCard(
-                color: const Color(0xFFDFF5E5),
+                // Added a gradient background to the card for a more dynamic look
+                gradient: const LinearGradient(
+                  colors: [whiteColor, lightGreen],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Tareas activas',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 10),
+                    const Text(
+                      'Tareas activas',
+                      style: TextStyle(
+                        fontSize: 20, // Slightly larger title
+                        fontWeight: FontWeight.bold,
+                        color: darkGrey,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseAuth.instance.currentUser == null
-                          ? const Stream.empty()
-                          : FirebaseFirestore.instance
-                              .collection('tasks')
-                              .doc(FirebaseAuth.instance.currentUser!.uid)
-                              .collection('userTasks')
-                              .where('isCompleted', isEqualTo: false)
-                              .snapshots(),
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(FirebaseAuth.instance.currentUser!.uid)
+                          .collection('userTasks')
+                          .snapshots(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(
+                              child: CircularProgressIndicator(color: primaryGreen));
                         }
                         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                          return const Text('No tienes tareas activas.');
+                          return Text(
+                            'No tienes tareas aún.',
+                            style: TextStyle(color: mediumGrey, fontStyle: FontStyle.italic),
+                          );
                         }
-                        final tareas = snapshot.data!.docs;
+                        final allTasks = snapshot.data!.docs;
+                        final tasks = allTasks
+                            .where((task) =>
+                                task['isCompleted'] == null ||
+                                task['isCompleted'] == false)
+                            .toList();
+
+                        if (tasks.isEmpty) {
+                          return Text(
+                            'No tienes tareas pendientes.',
+                            style: TextStyle(color: mediumGrey, fontStyle: FontStyle.italic),
+                          );
+                        }
+
                         return Column(
                           children: [
-                            for (var doc in tareas)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: _taskRow(
-                                  Icons.play_circle,
-                                  doc.data() is Map && (doc.data() as Map).containsKey('title')
-                                      ? doc['title'] ?? 'Sin título'
-                                      : 'Sin título',
-                                  doc.data() is Map && (doc.data() as Map).containsKey('duracion')
-                                      ? doc['duracion']?.toString() ?? ''
-                                      : '',
+                            for (var task in tasks)
+                              Card(
+                                elevation: 4, // More pronounced shadow for cards
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15), // More rounded corners
+                                ),
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 0,
+                                    vertical:
+                                        10), // Adjusted vertical margin
+                                child: InkWell( // Added InkWell for ripple effect on tap
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => DetailsTaskScreen(
+                                        taskData: task.data()
+                                            as Map<String, dynamic>,
+                                        taskId: task.id,
+                                      ),
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                (task.data()
+                                                        as Map<String, dynamic>)['title'] ??
+                                                    '',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w700, // Bolder
+                                                  color: darkGrey,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                (task.data()
+                                                        as Map<String, dynamic>)['project'] ??
+                                                    '',
+                                                style: TextStyle(color: mediumGrey, fontSize: 14),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Icon(
+                                            Icons.arrow_forward_ios,
+                                            size: 18,
+                                            color: mediumGrey),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
                           ],
                         );
                       },
                     ),
-                    const SizedBox(height: 12),
-                    TextButton.icon(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: true,
-                          builder: (context) => Dialog(
-                            backgroundColor: Colors.transparent,
-                            insetPadding: const EdgeInsets.all(24),
-                            child: const NewTaskScreen(),
+                    const SizedBox(height: 20),
+                    Center( // Center the button
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: true,
+                            builder: (context) => Dialog(
+                              backgroundColor: Colors.transparent,
+                              insetPadding: const EdgeInsets.all(24),
+                              child: const NewTaskScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.add, size: 22),
+                        label: const Text('Nueva tarea'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryGreen, // Use primary green
+                          foregroundColor: whiteColor,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 25, vertical: 15), // Larger padding
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12), // More rounded
                           ),
-                        );
-                      },
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Nueva tarea'),
-                      style: TextButton.styleFrom(
-                        backgroundColor: const Color(0xFFCDECD0),
-                        foregroundColor: Colors.green[900],
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          textStyle: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              fontFamily: 'Montserrat'
+                          ),
+                          elevation: 8, // Added shadow to button
+                          shadowColor: primaryGreen.withOpacity(0.4),
+                        ).copyWith(
+                          overlayColor: MaterialStateProperty.resolveWith<Color>(
+                            (Set<MaterialState> states) {
+                              if (states.contains(MaterialState.pressed)) {
+                                return whiteColor.withOpacity(0.2); // Ripple effect
+                              }
+                              return primaryGreen;
+                            },
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
+
+              // Monthly Income Section
               _sectionCard(
-                color: const Color(0xFFE3F0FB),
+                color: whiteColor,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -196,21 +314,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         return Text(
                           'Ingresos este mes: \$${ingresos.toStringAsFixed(2)}',
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: darkGrey,
+                            fontFamily: 'Montserrat',
                           ),
                         );
                       },
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: const [
-                        Icon(Icons.info_outline, size: 16, color: Colors.blue),
-                        SizedBox(width: 6),
-                        Text('2 facturas vencen esta semana',
-                            style: TextStyle(fontSize: 13, color: Colors.black54)),
-                      ],
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: warningOrange.withOpacity(0.1), // Light orange background
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: warningOrange.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.warning_amber_rounded,
+                              size: 24,
+                              color:
+                                  warningOrange), // Changed icon and color for warning
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '2 facturas vencen esta semana',
+                              style: TextStyle(fontSize: 15, color: darkGrey, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                   ],
                 ),
@@ -221,49 +355,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(context, '/estadisticas');
-                      },
-                      child: _actionCard(
-                        icon: Icons.bar_chart,
-                        label: 'Ver estadísticas',
-                        color: Colors.green[800]!,
-                        textColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
                         Navigator.pushNamed(context, '/facturacion');
                       },
                       child: _actionCard(
                         icon: Icons.receipt_long,
                         label: 'Ir a facturación',
-                        color: Colors.white,
-                        borderColor: Colors.grey[300],
-                        textColor: Colors.black,
+                        // Gradient for action card
+                        gradient: const LinearGradient(
+                          colors: [primaryGreen, softGreenGradientStart],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                        textColor: whiteColor,
                       ),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, '/clientes');
-                },
-                child: _sectionCard(
-                  color: Colors.white,
-                  child: Row(
-                    children: const [
-                      Icon(Icons.people_alt_outlined),
-                      SizedBox(width: 10),
-                      Text('Ver clientes',
-                          style: TextStyle(fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                ),
               ),
             ],
           ),
@@ -272,29 +379,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Not used in the improved UI, but kept for completeness based on original code
   Widget _taskRow(IconData icon, String task, String time) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-            Icon(icon, color: Colors.green[700]),
+            Icon(icon, color: primaryGreen),
             const SizedBox(width: 8),
-            Text(task),
+            Text(task, style: const TextStyle(color: darkGrey)),
           ],
         ),
-        Text(time),
+        Text(time, style: const TextStyle(color: mediumGrey)),
       ],
     );
   }
 
-  Widget _sectionCard({required Widget child, Color? color}) {
+  Widget _sectionCard({required Widget child, Color? color, Gradient? gradient}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20), // Increased padding inside cards
       decoration: BoxDecoration(
-        color: color ?? Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: color, // Use color if gradient is not provided
+        gradient: gradient, // Use gradient if provided
+        borderRadius: BorderRadius.circular(20), // More rounded corners for sections
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2), // Stronger shadow for better separation
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: const Offset(0, 5), // changes position of shadow
+          ),
+        ],
       ),
       child: child,
     );
@@ -303,25 +420,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _actionCard({
     required IconData icon,
     required String label,
-    required Color color,
+    Color? color,
     Color? borderColor,
     Color? textColor,
+    Gradient? gradient,
   }) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14), // Increased padding
       decoration: BoxDecoration(
         color: color,
+        gradient: gradient, // Use gradient for action cards
         border: borderColor != null ? Border.all(color: borderColor) : null,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18), // More rounded corners
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 4), // changes position of shadow
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: textColor ?? Colors.white),
-          const SizedBox(width: 8),
-          Text(label,
-              style: TextStyle(
-                  color: textColor ?? Colors.white, fontWeight: FontWeight.bold)),
+          Icon(icon, color: textColor ?? whiteColor, size: 24), // Larger icon
+          const SizedBox(width: 10), // Increased spacing
+          Text(
+            label,
+            style: TextStyle(
+              color: textColor ?? whiteColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              fontFamily: 'Montserrat',
+            ),
+          ),
         ],
       ),
     );
@@ -361,9 +494,10 @@ class _WorkTimerState extends State<WorkTimer> {
   Widget build(BuildContext context) {
     final horas = _duracion.inHours;
     final minutos = _duracion.inMinutes % 60;
+    final segundos = _duracion.inSeconds % 60; // Show seconds for a more dynamic feel
     return Text(
-      'Hoy trabajaste: ${horas > 0 ? '$horas h ' : ''}$minutos m',
-      style: const TextStyle(color: Colors.grey),
+      'Hoy trabajaste: ${horas > 0 ? '$horas h ' : ''}${minutos.toString().padLeft(2, '0')} m ${segundos.toString().padLeft(2, '0')} s',
+      style: TextStyle(color: _DashboardScreenState.mediumGrey, fontSize: 16, fontFamily: 'Roboto'), // Changed font
     );
   }
 }
