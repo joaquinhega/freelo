@@ -79,8 +79,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .collection('users')
         .doc(user.uid)
         .collection('facturas')
-        .where('fecha', isGreaterThanOrEqualTo: inicioMes)
-        .where('fecha', isLessThan: finMes)
+        .where('fechaFacturacion', isGreaterThanOrEqualTo: inicioMes)
+        .where('fechaFacturacion', isLessThan: finMes)
         .get();
 
     double total = 0.0;
@@ -104,8 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: const Footer(currentIndex: 0),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding:
-              const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -187,8 +186,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 0,
-                                    vertical:
-                                        10),
+                                    vertical: 10),
                                 child: InkWell(
                                   onTap: () {
                                     showDialog(
@@ -310,30 +308,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         );
                       },
                     ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: warningOrange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: warningOrange.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        children: const [
-                          Icon(Icons.warning_amber_rounded,
-                              size: 24,
-                              color:
-                                  warningOrange),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              '2 facturas vencen esta semana',
-                              style: TextStyle(fontSize: 15, color: darkGrey, fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
                   ],
                 ),
               ),

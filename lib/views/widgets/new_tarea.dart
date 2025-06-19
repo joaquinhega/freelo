@@ -138,7 +138,6 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                     controller: _titleController,
                     decoration: const InputDecoration(
                       labelText: 'Título',
-                      hintText: 'Animación 3D',
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) =>

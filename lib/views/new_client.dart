@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/firestore_service.dart'; 
+import '../services/firestore_service.dart';
 
 class NewClientScreen extends StatefulWidget {
   const NewClientScreen({super.key});
@@ -26,8 +26,15 @@ class _NewClientScreenState extends State<NewClientScreen> {
   bool _tieneFases = false;
   bool _tieneCliente = false;
 
-  // Lista para almacenar los controladores de las fases
-  final List<Map<String, TextEditingController>> _controladoresFases = [];
+  // Lista para almacenar los datos de las fases
+  final List<Map<String, String>> _fases = [];
+
+  static const Color primaryGreen = Color(0xFF2E7D32);
+  static const Color lightGreen = Color(0xFFE8F5E9);
+  static const Color whiteColor = Colors.white;
+  static const Color darkGrey = Color(0xFF212121);
+  static const Color mediumGrey = Color(0xFF616161);
+  static const Color errorRed = Color(0xFFD32F2F);
 
   @override
   void dispose() {
@@ -35,13 +42,6 @@ class _NewClientScreenState extends State<NewClientScreen> {
     _controladorDescripcion.dispose();
     _controladorFecha.dispose();
 
-    // Liberar controladores de fases
-    for (var fase in _controladoresFases) {
-      fase['titulo']?.dispose();
-      fase['descripcion']?.dispose();
-    }
-
-    // Liberar controladores de cliente
     _controladorNombreCliente.dispose();
     _controladorEmailCliente.dispose();
     _controladorTelefonoCliente.dispose();
@@ -73,20 +73,80 @@ class _NewClientScreenState extends State<NewClientScreen> {
     );
   }
 
-  void _agregarFase() {
-    setState(() {
-      _controladoresFases.add({
-        'titulo': TextEditingController(),
-        'descripcion': TextEditingController(),
+  void _addPhase() async {
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) {
+        final TextEditingController titleController = TextEditingController();
+        final TextEditingController descController = TextEditingController();
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Nueva fase', style: TextStyle(fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Título',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                    labelStyle: TextStyle(color: mediumGrey),
+                  ),
+                  style: const TextStyle(color: darkGrey, fontFamily: 'Roboto'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descController,
+                  decoration: const InputDecoration(
+                    labelText: 'Descripción',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                    labelStyle: TextStyle(color: mediumGrey),
+                  ),
+                  style: const TextStyle(color: darkGrey, fontFamily: 'Roboto'),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (titleController.text.trim().isEmpty) return;
+                Navigator.pop(context, {
+                  'id': DateTime.now().millisecondsSinceEpoch.toString(), // Add a unique ID
+                  'title': titleController.text.trim(),
+                  'description': descController.text.trim(),
+                  'date': 'N/A', // Default date
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryGreen,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 5,
+              ),
+              child: const Text('Agregar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)),
+            ),
+          ],
+          elevation: 10,
+        );
+      },
+    );
+
+    if (result != null && result['title'] != null && result['title']!.isNotEmpty) {
+      setState(() {
+        _fases.add(result);
       });
-    });
+    }
   }
 
   void _eliminarFase(int indice) {
     setState(() {
-      _controladoresFases[indice]['titulo']?.dispose();
-      _controladoresFases[indice]['descripcion']?.dispose();
-      _controladoresFases.removeAt(indice);
+      _fases.removeAt(indice);
     });
   }
 
@@ -105,16 +165,16 @@ class _NewClientScreenState extends State<NewClientScreen> {
           children: [
             const Text(
               'Crear Proyecto',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
             ),
             const SizedBox(height: 24),
 
-            const Text('Título'),
+            const Text('Título', style: TextStyle(color: darkGrey, fontFamily: 'Montserrat')),
             const SizedBox(height: 6),
             _campoEntrada(controlador: _controladorTitulo, textoAyuda: 'Título'),
             const SizedBox(height: 16),
 
-            const Text('Descripción'),
+            const Text('Descripción', style: TextStyle(color: darkGrey, fontFamily: 'Montserrat')),
             const SizedBox(height: 6),
             _campoEntrada(
                 controlador: _controladorDescripcion,
@@ -122,7 +182,7 @@ class _NewClientScreenState extends State<NewClientScreen> {
                 maxLines: 3),
             const SizedBox(height: 16),
 
-            const Text('Fecha de Entrega'),
+            const Text('Fecha de Entrega', style: TextStyle(color: darkGrey, fontFamily: 'Montserrat')),
             const SizedBox(height: 6),
             TextFormField(
               controller: _controladorFecha,
@@ -136,7 +196,7 @@ class _NewClientScreenState extends State<NewClientScreen> {
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                suffixIcon: Icon(Icons.calendar_today),
+                suffixIcon: Icon(Icons.calendar_today, color: mediumGrey),
               ),
               onTap: () async {
                 FocusScope.of(context).requestFocus(FocusNode());
@@ -145,6 +205,23 @@ class _NewClientScreenState extends State<NewClientScreen> {
                   initialDate: DateTime.now(),
                   firstDate: DateTime(2020),
                   lastDate: DateTime(2100),
+                  builder: (context, child) {
+                    return Theme(
+                      data: ThemeData.light().copyWith(
+                        colorScheme: const ColorScheme.light(
+                          primary: primaryGreen, // header background color
+                          onPrimary: whiteColor, // header text color
+                          onSurface: darkGrey, // body text color
+                        ),
+                        textButtonTheme: TextButtonThemeData(
+                          style: TextButton.styleFrom(
+                            foregroundColor: primaryGreen, // button text color
+                          ),
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
                 );
                 if (picked != null) {
                   _controladorFecha.text =
@@ -161,45 +238,39 @@ class _NewClientScreenState extends State<NewClientScreen> {
                   onChanged: (bool? valor) {
                     setState(() {
                       _tieneFases = valor ?? false;
-                      if (_tieneFases && _controladoresFases.isEmpty) {
-                        _agregarFase();
-                      }
                       if (!_tieneFases) {
-                        for (var fase in _controladoresFases) {
-                          fase['titulo']?.clear();
-                          fase['descripcion']?.clear();
-                        }
-                        _controladoresFases.clear();
+                        _fases.clear(); // Clear phases if unchecked
                       }
                     });
                   },
+                  activeColor: primaryGreen,
                 ),
-                const Text('Fases'),
+                const Text('Fases', style: TextStyle(color: darkGrey, fontFamily: 'Montserrat')),
               ],
             ),
             const SizedBox(height: 24),
 
             if (_tieneFases) ...[
-              const Divider(height: 1, color: Colors.grey),
+              const Divider(height: 1, color: lightGreen),
               const SizedBox(height: 16),
               const Text(
                 'Fases del Proyecto',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat'),
               ),
               const SizedBox(height: 16),
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: _controladoresFases.length,
+                itemCount: _fases.length,
                 itemBuilder: (context, indice) {
-                  final controladorTituloFase = _controladoresFases[indice]['titulo']!;
-                  final controladorDescripcionFase = _controladoresFases[indice]['descripcion']!;
+                  final phase = _fases[indice];
                   return Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE6F2EA),
+                      color: lightGreen.withOpacity(0.4),
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: primaryGreen.withOpacity(0.3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,23 +279,21 @@ class _NewClientScreenState extends State<NewClientScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Fase ${indice + 1}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              'Fase ${indice + 1}: ${phase['title'] ?? 'Sin título'}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat'),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
+                              icon: const Icon(Icons.delete, color: errorRed),
                               onPressed: () => _eliminarFase(indice),
+                              tooltip: 'Eliminar Fase',
                             ),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        const Text('Título'),
-                        const SizedBox(height: 6),
-                        _campoEntrada(controlador: controladorTituloFase, textoAyuda: 'Título de la fase'),
-                        const SizedBox(height: 16),
-                        const Text('Descripción'),
-                        const SizedBox(height: 6),
-                        _campoEntrada(controlador: controladorDescripcionFase, textoAyuda: 'Descripción de la fase', maxLines: 3),
+                        Text(
+                          phase['description'] ?? 'Sin descripción',
+                          style: const TextStyle(color: mediumGrey, fontFamily: 'Roboto'),
+                        ),
                       ],
                     ),
                   );
@@ -233,11 +302,11 @@ class _NewClientScreenState extends State<NewClientScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _agregarFase,
-                  icon: const Icon(Icons.add, color: Colors.white),
-                  label: const Text('Agregar fase', style: TextStyle(color: Colors.white)),
+                  onPressed: _addPhase,
+                  icon: const Icon(Icons.add, color: whiteColor),
+                  label: const Text('Agregar fase', style: TextStyle(color: whiteColor, fontFamily: 'Montserrat')),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: primaryGreen,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -263,36 +332,37 @@ class _NewClientScreenState extends State<NewClientScreen> {
                       }
                     });
                   },
+                  activeColor: primaryGreen,
                 ),
-                const Text('Cliente'),
+                const Text('Cliente', style: TextStyle(color: darkGrey, fontFamily: 'Montserrat')),
               ],
             ),
             const SizedBox(height: 24),
 
             if (_tieneCliente) ...[
-              const Divider(height: 1, color: Colors.grey),
+              const Divider(height: 1, color: lightGreen),
               const SizedBox(height: 16),
               const Text(
                 'Información del Cliente',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat'),
               ),
               const SizedBox(height: 16),
-              const Text('Nombre'),
+              const Text('Nombre', style: TextStyle(color: darkGrey, fontFamily: 'Montserrat')),
               const SizedBox(height: 6),
               _campoEntrada(controlador: _controladorNombreCliente, textoAyuda: 'Nombre completo'),
               const SizedBox(height: 16),
 
-              const Text('Email'),
+              const Text('Email', style: TextStyle(color: darkGrey, fontFamily: 'Montserrat')),
               const SizedBox(height: 6),
               _campoEntrada(controlador: _controladorEmailCliente, textoAyuda: 'correo@ejemplo.com', tipoTeclado: TextInputType.emailAddress),
               const SizedBox(height: 16),
 
-              const Text('Teléfono'),
+              const Text('Teléfono', style: TextStyle(color: darkGrey, fontFamily: 'Montserrat')),
               const SizedBox(height: 6),
               _campoEntrada(controlador: _controladorTelefonoCliente, textoAyuda: '123456789', tipoTeclado: TextInputType.phone),
               const SizedBox(height: 16),
 
-              const Text('Notas'),
+              const Text('Notas', style: TextStyle(color: darkGrey, fontFamily: 'Montserrat')),
               const SizedBox(height: 6),
               _campoEntrada(controlador: _controladorNotasCliente, textoAyuda: 'Notas adicionales', maxLines: 3),
               const SizedBox(height: 24),
@@ -307,16 +377,6 @@ class _NewClientScreenState extends State<NewClientScreen> {
                       const SnackBar(content: Text('El título del proyecto es obligatorio.')),
                     );
                     return;
-                  }
-
-                  List<Map<String, String>> datosFases = [];
-                  if (_tieneFases) {
-                    for (var fase in _controladoresFases) {
-                      datosFases.add({
-                        'titulo': fase['titulo']?.text ?? '',
-                        'descripcion': fase['descripcion']?.text ?? '',
-                      });
-                    }
                   }
 
                   Map<String, String>? datosCliente;
@@ -335,14 +395,16 @@ class _NewClientScreenState extends State<NewClientScreen> {
                       description: _controladorDescripcion.text,
                       date: _controladorFecha.text,
                       hasPhases: _tieneFases,
-                      phases: datosFases,
+                      phases: _fases, // Now sending the _fases list directly
                       hasClient: _tieneCliente,
                       clientInfo: datosCliente,
                     );
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Proyecto creado con éxito!')),
                     );
-                    Navigator.pop(context);
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Error al crear proyecto: $e')),
@@ -350,18 +412,30 @@ class _NewClientScreenState extends State<NewClientScreen> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: primaryGreen,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 8,
+                  shadowColor: primaryGreen.withOpacity(0.4),
+                ).copyWith(
+                  overlayColor: MaterialStateProperty.resolveWith<Color>(
+                        (Set<MaterialState> states) {
+                      if (states.contains(MaterialState.pressed)) {
+                        return whiteColor.withOpacity(0.2);
+                      }
+                      return primaryGreen;
+                    },
+                  ),
                 ),
                 child: const Text(
                   'CREAR',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                  style: TextStyle(fontSize: 18, color: whiteColor, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
                 ),
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

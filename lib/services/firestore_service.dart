@@ -5,7 +5,7 @@ class FirestoreService {
   // Variables para llamar a servicios de Firestore y FirebaseAuth
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
- 
+
   //Agregar una tarea
   Future<void> addTask({
     required String title,
@@ -13,7 +13,7 @@ class FirestoreService {
     required String project,
     required DateTime fecha,
     String? phase,
-    required String projectId, 
+    required String projectId,
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -24,7 +24,7 @@ class FirestoreService {
       'title': title,
       'description': description,
       'project': project,
-      'projectId': projectId, 
+      'projectId': projectId,
       'fecha': fecha,
       if (phase != null) 'phase': phase,
       'timestamp': FieldValue.serverTimestamp(),
@@ -85,7 +85,7 @@ class FirestoreService {
         .doc(taskId)
         .update({'isCompleted': isCompleted});
   }
-  // Obtinene las tareas del usuario 
+  // Obtinene las tareas del usuario
   Stream<QuerySnapshot> getUserTasksStream() {
     final user = _auth.currentUser;
     if (user == null) {
@@ -107,7 +107,7 @@ class FirestoreService {
     String? description,
     String? date,
     bool hasPhases = false,
-    List<Map<String, String>>? phases,
+    List<Map<String, String>>? phases, // Se espera List<Map<String, String>>
     bool hasClient = false,
     Map<String, String>? clientInfo,
   }) async {
@@ -119,7 +119,7 @@ class FirestoreService {
       'description': description ?? '',
       'date': date ?? '',
       'hasPhases': hasPhases,
-      'phases': phases ?? [],
+      'phases': phases ?? [], // Asegura que sea una lista vacía si es null
       'hasClient': hasClient,
       'timestamp': FieldValue.serverTimestamp(),
     };
@@ -199,7 +199,7 @@ class FirestoreService {
         });
   }
 
-  // Editar un proyecto 
+  // Editar un proyecto
   Future<void> updateProject({
     required String userId,
     required String projectId,
@@ -224,5 +224,50 @@ class FirestoreService {
         .collection('projects')
         .doc(projectId)
         .delete();
+  }
+
+  // Añadir una factura
+  Future<void> addInvoice({
+    required String projectId,
+    required String projectName,
+    required double amount,
+    required DateTime emissionDate,
+    required DateTime dueDate,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      print('[firestore_service] No user logged in para addInvoice');
+      return;
+    }
+    final data = {
+      'projectId': projectId,
+      'projectName': projectName,
+      'amount': amount,
+      'emissionDate': Timestamp.fromDate(emissionDate),
+      'dueDate': Timestamp.fromDate(dueDate),
+      'timestamp': FieldValue.serverTimestamp(),
+    };
+    print('[firestore_service] Guardando factura en users/${user.uid}/invoices: $data');
+    await _db
+        .collection('users')
+        .doc(user.uid)
+        .collection('invoices')
+        .add(data);
+  }
+
+  // Obtener las facturas del usuario
+  Stream<QuerySnapshot> getInvoicesStream() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      print('[firestore_service] No user logged in para getInvoicesStream');
+      return const Stream.empty();
+    }
+    print('[firestore_service] Escuchando todas las facturas en users/${user.uid}/invoices');
+    return _db
+      .collection('users')
+      .doc(user.uid)
+      .collection('facturas')
+      .orderBy('timestamp', descending: true)
+      .snapshots();
   }
 }

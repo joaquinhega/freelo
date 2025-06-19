@@ -4,6 +4,7 @@ import 'package:myapp/views/detailsProject.dart';
 import 'package:myapp/views/new_client.dart';
 import '../services/firestore_service.dart';
 import 'widgets/Footer.dart';
+import '../routes/routes.dart'; 
 
 class ClientesScreen extends StatefulWidget {
   const ClientesScreen({super.key});
@@ -54,6 +55,14 @@ class _ClientesScreenState extends State<ClientesScreen> {
             bottom: Radius.circular(20),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.receipt_long, color: primaryGreen), // Icono de factura
+            onPressed: () {
+              Navigator.pushNamed(context, Routes.invoices);
+            },
+          ),
+        ],
       ),
       bottomNavigationBar: const Footer(currentIndex: 2),
       floatingActionButton: FloatingActionButton(

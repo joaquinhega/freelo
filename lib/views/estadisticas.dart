@@ -21,7 +21,7 @@ class EstadisticasScreen extends StatelessWidget {
 
     for (var doc in snapshot.docs) {
       final precio = doc['precio'];
-      final fecha = (doc['fecha'] as Timestamp?)?.toDate();
+      final fecha = (doc['fechaFacturacion'] as Timestamp?)?.toDate();
       if (fecha == null) continue;
       final mes = fecha.month - 1;
       double monto = 0.0;
@@ -68,31 +68,6 @@ class EstadisticasScreen extends StatelessWidget {
       }
     }
     return total;
-  }
-
-  Future<List<String>> _getClientesPrincipales() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return [];
-
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('facturas')
-        .get();
-
-    Map<String, double> clientes = {};
-    for (var doc in snapshot.docs) {
-      final cliente = doc.data().containsKey('cliente') ? doc['cliente'] : 'Sin cliente';
-      final precio = doc['precio'];
-      double monto = 0.0;
-      if (precio is int) monto = precio.toDouble();
-      else if (precio is double) monto = precio;
-      else if (precio is String) monto = double.tryParse(precio) ?? 0.0;
-      clientes[cliente] = (clientes[cliente] ?? 0) + monto;
-    }
-    final sorted = clientes.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    return sorted.take(3).map((e) => e.key).toList();
   }
 
   @override
@@ -169,6 +144,27 @@ class EstadisticasScreen extends StatelessWidget {
                             ),
                           ),
                         ],
+                        lineTouchData: LineTouchData(
+                          touchTooltipData: LineTouchTooltipData(
+                            tooltipBgColor: Colors.white,
+                            tooltipRoundedRadius: 8,
+                            fitInsideHorizontally: true,
+                            fitInsideVertically: true,
+                            tooltipPadding: const EdgeInsets.all(8),
+                            getTooltipItems: (touchedSpots) {
+                              return touchedSpots.map((spot) {
+                                return LineTooltipItem(
+                                  '\$${spot.y.toStringAsFixed(2)}',
+                                  const TextStyle(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                );
+                              }).toList();
+                            },
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -186,22 +182,7 @@ class EstadisticasScreen extends StatelessWidget {
                 future: _getIngresosTotales(),
                 builder: (context, snapshot) {
                   final ingresos = snapshot.data ?? 0.0;
-                  return Text('Ingresos: \$${ingresos.toStringAsFixed(2)}');
-                },
-              ),
-              const SizedBox(height: 16),
-              const Text('Clientes principales:'),
-              FutureBuilder<List<String>>(
-                future: _getClientesPrincipales(),
-                builder: (context, snapshot) {
-                  final clientes = snapshot.data ?? [];
-                  if (clientes.isEmpty) {
-                    return const Text('Sin clientes');
-                  }
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: clientes.map((c) => Text(c)).toList(),
-                  );
+                  return Text('Ingresos Totales: \$${ingresos.toStringAsFixed(2)}');
                 },
               ),
             ],
