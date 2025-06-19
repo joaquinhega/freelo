@@ -1,14 +1,14 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/firestore_service.dart';
-import '../routes/routes.dart';
-import 'widgets/details_task.dart';
-import 'detailsPhase.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Autenticación de Firebase.
+import 'package:flutter/material.dart'; // Widgets de Flutter para UI.
+import 'package:cloud_firestore/cloud_firestore.dart'; // Base de datos Firestore.
+import '../services/firestore_service.dart'; // Servicio para operaciones con Firestore.
+import '../routes/routes.dart'; // Definición de rutas de navegación.
+import 'widgets/details_task.dart'; // Widget para detalles de una tarea.
+import 'detailsPhase.dart'; // Pantalla de detalles de una fase.
 
 class DetailsProjectScreen extends StatefulWidget {
-  final Map<String, dynamic> projectData;
-  final String projectId;
+  final Map<String, dynamic> projectData; // Datos del proyecto a mostrar.
+  final String projectId; // ID del proyecto.
 
   const DetailsProjectScreen({
     super.key,
@@ -21,17 +21,18 @@ class DetailsProjectScreen extends StatefulWidget {
 }
 
 class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
-  late PageController _pageController;
-  int _currentPage = 0;
-  bool _saving = false;
+  late PageController _pageController; // Controlador para el PageView de fases.
+  int _currentPage = 0; // Índice de la página actual del PageView.
+  bool _saving = false; // Indicador de estado de guardado.
 
-  final FirestoreService _firestoreService = FirestoreService();
+  final FirestoreService _firestoreService = FirestoreService(); // Instancia del servicio de Firestore.
 
-  late Stream<QuerySnapshot> _tasksStream;
+  late Stream<QuerySnapshot> _tasksStream; // Stream para tareas pendientes del proyecto.
 
-  Map<String, dynamic> _projectData = {};
-  String _projectId = '';
+  Map<String, dynamic> _projectData = {}; // Datos del proyecto, mutable para actualizaciones.
+  String _projectId = ''; // ID del proyecto.
 
+  // Definición de colores para la UI.
   static const Color primaryGreen = Color(0xFF2E7D32);
   static const Color lightGreen = Color(0xFFE8F5E9);
   static const Color whiteColor = Colors.white;
@@ -44,13 +45,14 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.85);
+    _pageController = PageController(viewportFraction: 0.85); // Inicializa el controlador del PageView.
 
-    _projectData = Map<String, dynamic>.from(widget.projectData);
-    _projectId = widget.projectId;
+    _projectData = Map<String, dynamic>.from(widget.projectData); // Copia los datos del proyecto.
+    _projectId = widget.projectId; // Asigna el ID del proyecto.
 
-    final user = FirebaseAuth.instance.currentUser;
+    final user = FirebaseAuth.instance.currentUser; // Obtiene el usuario actual.
     if (user != null) {
+      // Configura el stream para obtener tareas no completadas del proyecto del usuario.
       _tasksStream = FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -59,118 +61,88 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
           .where('isCompleted', isEqualTo: false)
           .snapshots();
     } else {
-      _tasksStream = const Stream.empty();
+      _tasksStream = const Stream.empty(); // Stream vacío si no hay usuario.
     }
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _pageController.dispose(); // Libera el controlador del PageView.
     super.dispose();
   }
 
+  // Abre la pantalla de edición de proyecto y actualiza en Firestore si hay cambios.
   Future<void> _editProject() async {
     final result = await Navigator.pushNamed(
       context,
       Routes.edit_project,
-      arguments: {
-        'initialData': _projectData,
-      },
+      arguments: {'initialData': _projectData,}, // Pasa los datos actuales para editar.
     );
     if (result != null && result is Map<String, dynamic>) {
-      setState(() => _saving = true);
+      setState(() => _saving = true); // Activa el estado de guardado.
       try {
         await _firestoreService.updateProject(
           userId: FirebaseAuth.instance.currentUser!.uid,
           projectId: _projectId,
-          data: result,
+          data: result, // Datos actualizados.
         );
         setState(() {
-          _projectData = {..._projectData, ...result};
+          _projectData = {..._projectData, ...result}; // Fusiona los datos actualizados.
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Proyecto actualizado correctamente.")),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Proyecto actualizado correctamente.")));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error al guardar: $e")),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al guardar: $e")));
       }
-      setState(() => _saving = false);
+      setState(() => _saving = false); // Desactiva el estado de guardado.
     }
   }
 
+  // Elimina el proyecto de Firestore tras una confirmación.
   Future<void> _deleteProject() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+      builder: (context) => AlertDialog( // Diálogo de confirmación.
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('¿Eliminar proyecto?', style: TextStyle(fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
         content: const Text('¿Estás seguro que deseas eliminar este proyecto? Esta acción no se puede deshacer.', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: errorRed,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 5,
-            ),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold))),
+          ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold))),
         ],
         elevation: 10,
       ),
     );
-    if (confirm == true) {
+    if (confirm == true) { // Si el usuario confirma.
       try {
         await _firestoreService.deleteProject(
           userId: FirebaseAuth.instance.currentUser!.uid,
           projectId: _projectId,
         );
         if (mounted) {
-          Navigator.of(context).pop();
+          Navigator.of(context).pop(); // Vuelve a la pantalla anterior.
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error al eliminar: $e")),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al eliminar: $e")));
       }
     }
   }
 
+  // Widget genérico para mostrar un campo de información (solo lectura).
   Widget _infoField({required String label, required String value}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: darkGrey,
-              fontFamily: 'Montserrat'),
-        ),
+        Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
         const SizedBox(height: 6),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: lightGreen.withOpacity(0.4),
+            color: lightGreen.withOpacity(0.4), // Fondo semitransparente.
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: primaryGreen.withOpacity(0.3)),
           ),
-          child: Text(
-            value.isEmpty ? 'N/A' : value,
-            style: const TextStyle(fontSize: 16, color: darkGrey, fontFamily: 'Roboto'),
-          ),
+          child: Text(value.isEmpty ? 'N/A' : value, style: const TextStyle(fontSize: 16, color: darkGrey, fontFamily: 'Roboto')),
         ),
       ],
     );
@@ -178,72 +150,48 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final projectName = _projectData['title'] ?? 'Proyecto Desconocido';
-    final hasPhases = _projectData['hasPhases'] ?? false;
-    final phases = (_projectData['phases'] as List<dynamic>?)
-            ?.map((e) => e as Map<String, dynamic>)
-            .toList() ??
-        [];
-    final client = (_projectData.containsKey('client') && _projectData['client'] != null)
-        ? _projectData['client'] as Map<String, dynamic>
-        : null;
+    final projectName = _projectData['title'] ?? 'Proyecto Desconocido'; // Título del proyecto.
+    final hasPhases = _projectData['hasPhases'] ?? false; // Indica si el proyecto tiene fases.
+    final phases = (_projectData['phases'] as List<dynamic>?)?.map((e) => e as Map<String, dynamic>).toList() ?? []; // Lista de fases.
+    final client = (_projectData.containsKey('client') && _projectData['client'] != null) ? _projectData['client'] as Map<String, dynamic> : null; // Datos del cliente.
 
     return Scaffold(
-      backgroundColor: offWhite,
+      backgroundColor: offWhite, // Color de fondo de la pantalla.
       appBar: AppBar(
-        leading: BackButton(color: darkGrey),
-        title: Text(
-          projectName,
-          style: const TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontSize: 24, fontFamily: 'Montserrat'),
-          overflow: TextOverflow.ellipsis,
-        ),
+        leading: BackButton(color: darkGrey), // Botón de retroceso.
+        title: Text(projectName, style: const TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontSize: 24, fontFamily: 'Montserrat'), overflow: TextOverflow.ellipsis),
         backgroundColor: whiteColor,
         elevation: 4,
         centerTitle: false,
         toolbarHeight: 90,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20),
-          ),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(20))), // Forma de la barra de título.
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight,
-              ),
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Card(
                     elevation: 6,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     margin: EdgeInsets.zero,
-                    child: ExpansionTile(
+                    child: ExpansionTile( // Sección expandible para la información del proyecto.
                       backgroundColor: whiteColor,
                       collapsedBackgroundColor: whiteColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      collapsedShape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                       tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       childrenPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      title: const Text(
-                        'Información del proyecto',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat'),
-                      ),
+                      title: const Text('Información del proyecto', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
                       trailing: IconButton(
                         icon: const Icon(Icons.edit, size: 26, color: primaryGreen),
                         tooltip: 'Editar proyecto',
-                        onPressed: _saving ? null : _editProject,
+                        onPressed: _saving ? null : _editProject, // Deshabilita el botón si está guardando.
                       ),
                       children: [
                         const Divider(height: 25, thickness: 1, color: lightGreen),
@@ -252,7 +200,7 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                         _infoField(label: 'DESCRIPCIÓN', value: _projectData['description'] ?? 'Sin descripción'),
                         const SizedBox(height: 16),
                         _infoField(label: 'FECHA DE ENTREGA', value: _projectData['date'] ?? 'N/A'),
-                        if (_projectData['hasClient'] == true) ...[
+                        if (_projectData['hasClient'] == true) ...[ // Muestra información del cliente si existe.
                           const SizedBox(height: 24),
                           const Text('CLIENTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: darkGrey, fontFamily: 'Montserrat')),
                           const SizedBox(height: 16),
@@ -267,19 +215,15 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                         const SizedBox(height: 24),
                         SizedBox(
                           width: double.infinity,
-                          child: ElevatedButton.icon(
+                          child: ElevatedButton.icon( // Botón para eliminar el proyecto.
                             onPressed: _deleteProject,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: errorRed,
                               padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               elevation: 8,
                               shadowColor: errorRed.withOpacity(0.4),
-                            ).copyWith(
-                              overlayColor: MaterialStateProperty.resolveWith<Color>(
-                                (Set<MaterialState> states) {
+                            ).copyWith(overlayColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
                                   if (states.contains(MaterialState.pressed)) {
                                     return whiteColor.withOpacity(0.2);
                                   }
@@ -288,84 +232,51 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                               ),
                             ),
                             icon: const Icon(Icons.delete, color: whiteColor, size: 24),
-                            label: const Text('ELIMINAR PROYECTO',
-                                style: TextStyle(fontSize: 17, color: whiteColor, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
+                            label: const Text('ELIMINAR PROYECTO', style: TextStyle(fontSize: 17, color: whiteColor, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  if (hasPhases && phases.isNotEmpty) ...[
+                  if (hasPhases && phases.isNotEmpty) ...[ // Sección para fases del proyecto si existen.
                     const SizedBox(height: 30),
-                    const Text(
-                      'FASES DEL PROYECTO',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat'),
-                    ),
+                    const Text('FASES DEL PROYECTO', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
                     const SizedBox(height: 20),
                     SizedBox(
                       height: 240,
-                      child: PageView.builder(
+                      child: PageView.builder( // Paginador para las fases.
                         controller: _pageController,
-                        itemCount: phases.length + 1,
+                        itemCount: phases.length + 1, // +1 para el botón de "Nueva fase".
                         onPageChanged: (int page) {
-                          setState(() {
-                            _currentPage = page;
-                          });
+                          setState(() => _currentPage = page); // Actualiza el indicador de página.
                         },
                         itemBuilder: (context, index) {
                           if (index < phases.length) {
                             final phase = phases[index];
                             return GestureDetector(
                               onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => DetailsPhaseScreen(
-                                      phaseData: phase,
-                                      projectId: _projectId,
-                                      phaseId: phase['id'] ?? '',
-                                    ),
-                                  ),
-                                );
+                                // Navega a la pantalla de detalles de la fase.
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => DetailsPhaseScreen(phaseData: phase, projectId: _projectId, phaseId: phase['id'] ?? '',)));
                               },
                               child: Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 10.0),
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [lightGreen, whiteColor],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                                  gradient: const LinearGradient(colors: [lightGreen, whiteColor], begin: Alignment.topLeft, end: Alignment.bottomRight,), // Degradado.
                                   borderRadius: BorderRadius.circular(18),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.3),
-                                      spreadRadius: 2,
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
+                                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), spreadRadius: 2, blurRadius: 8, offset: const Offset(0, 4),)], // Sombra.
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      '${index + 1}. ${phase['title'] ?? 'Fase sin título'}',
-                                      style: const TextStyle(
-                                          fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat'),
-                                    ),
+                                    Text('${index + 1}. ${phase['title'] ?? 'Fase sin título'}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
                                     const SizedBox(height: 12),
-                                    const Text(
-                                      'Próximas tareas:',
-                                      style: TextStyle(fontWeight: FontWeight.bold, color: primaryGreen, fontSize: 16, fontFamily: 'Roboto'),
-                                    ),
+                                    const Text('Próximas tareas:', style: TextStyle(fontWeight: FontWeight.bold, color: primaryGreen, fontSize: 16, fontFamily: 'Roboto')),
                                     const SizedBox(height: 8),
                                     Expanded(
-                                      child: StreamBuilder<QuerySnapshot>(
+                                      child: StreamBuilder<QuerySnapshot>( // Muestra tareas pendientes de esta fase.
                                         stream: FirebaseFirestore.instance
-                                            .collection('users')
-                                            .doc(FirebaseAuth.instance.currentUser!.uid)
+                                            .collection('users').doc(FirebaseAuth.instance.currentUser!.uid)
                                             .collection('userTasks')
                                             .where('projectId', isEqualTo: _projectId)
                                             .where('phase', isEqualTo: phase['title'])
@@ -376,10 +287,7 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                                             return const Center(child: CircularProgressIndicator(strokeWidth: 2, color: primaryGreen));
                                           }
                                           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                                            return const Text(
-                                              'Sin tareas activas',
-                                              style: TextStyle(color: mediumGrey, fontSize: 14, fontStyle: FontStyle.italic),
-                                            );
+                                            return const Text('Sin tareas activas', style: TextStyle(color: mediumGrey, fontSize: 14, fontStyle: FontStyle.italic));
                                           }
                                           final phaseTasks = snapshot.data!.docs;
                                           return ListView.builder(
@@ -389,11 +297,7 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                                             itemBuilder: (context, idx) {
                                               return Padding(
                                                 padding: const EdgeInsets.symmetric(vertical: 2.0),
-                                                child: Text(
-                                                  '• ${(phaseTasks[idx].data() as Map<String, dynamic>)['title'] ?? ''}',
-                                                  style: const TextStyle(
-                                                      fontSize: 15, color: darkGrey, fontFamily: 'Roboto'),
-                                                ),
+                                                child: Text('• ${(phaseTasks[idx].data() as Map<String, dynamic>)['title'] ?? ''}', style: const TextStyle(fontSize: 15, color: darkGrey, fontFamily: 'Roboto')),
                                               );
                                             },
                                           );
@@ -405,6 +309,7 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                               ),
                             );
                           } else {
+                            // Botón para agregar una nueva fase.
                             return GestureDetector(
                               onTap: () async {
                                 final result = await showDialog<Map<String, String>>(
@@ -412,54 +317,26 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                                   builder: (context) {
                                     final TextEditingController titleController = TextEditingController();
                                     final TextEditingController descController = TextEditingController();
-                                    return AlertDialog(
+                                    return AlertDialog( // Diálogo para añadir nueva fase.
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                       title: const Text('Nueva fase', style: TextStyle(fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
                                       content: SingleChildScrollView(
                                         child: Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            TextField(
-                                              controller: titleController,
-                                              decoration: const InputDecoration(
-                                                labelText: 'Título',
-                                                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-                                                labelStyle: TextStyle(color: mediumGrey),
-                                              ),
-                                              style: const TextStyle(color: darkGrey, fontFamily: 'Roboto'),
-                                            ),
+                                            TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))), labelStyle: TextStyle(color: mediumGrey)), style: const TextStyle(color: darkGrey, fontFamily: 'Roboto')),
                                             const SizedBox(height: 12),
-                                            TextField(
-                                              controller: descController,
-                                              decoration: const InputDecoration(
-                                                labelText: 'Descripción',
-                                                border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-                                                labelStyle: TextStyle(color: mediumGrey),
-                                              ),
-                                              style: const TextStyle(color: darkGrey, fontFamily: 'Roboto'),
-                                              maxLines: 2,
-                                            ),
+                                            TextField(controller: descController, decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))), labelStyle: TextStyle(color: mediumGrey)), style: const TextStyle(color: darkGrey, fontFamily: 'Roboto'), maxLines: 2,),
                                           ],
                                         ),
                                       ),
                                       actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(context),
-                                          child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold)),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            if (titleController.text.trim().isEmpty) return;
-                                            Navigator.pop(context, {
-                                              'title': titleController.text.trim(),
-                                              'description': descController.text.trim(),
-                                            });
+                                        TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold))),
+                                        ElevatedButton(onPressed: () {
+                                            if (titleController.text.trim().isEmpty) return; // Validación básica.
+                                            Navigator.pop(context, {'title': titleController.text.trim(), 'description': descController.text.trim(),});
                                           },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: primaryGreen,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                            elevation: 5,
-                                          ),
+                                          style: ElevatedButton.styleFrom(backgroundColor: primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 5,),
                                           child: const Text('Agregar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)),
                                         ),
                                       ],
@@ -470,20 +347,10 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                                 if (result != null && result['title'] != null && result['title']!.isNotEmpty) {
                                   final user = FirebaseAuth.instance.currentUser;
                                   if (user != null) {
-                                    final projectRef = FirebaseFirestore.instance
-                                        .collection('users')
-                                        .doc(user.uid)
-                                        .collection('projects')
-                                        .doc(_projectId);
-
+                                    final projectRef = FirebaseFirestore.instance.collection('users').doc(user.uid).collection('projects').doc(_projectId);
                                     await projectRef.update({
-                                      'phases': FieldValue.arrayUnion([
-                                        {
-                                          'id': DateTime.now().millisecondsSinceEpoch.toString(),
-                                          'title': result['title'],
-                                          'description': result['description'],
-                                          'date': 'N/A',
-                                        }
+                                      'phases': FieldValue.arrayUnion([ // Añade la nueva fase al array en Firestore.
+                                        {'id': DateTime.now().millisecondsSinceEpoch.toString(), 'title': result['title'], 'description': result['description'], 'date': 'N/A',}
                                       ])
                                     });
                                   }
@@ -496,30 +363,15 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                                   color: lightGreen.withOpacity(0.3),
                                   borderRadius: BorderRadius.circular(18),
                                   border: Border.all(color: primaryGreen, width: 2),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: primaryGreen.withOpacity(0.2),
-                                      spreadRadius: 1,
-                                      blurRadius: 5,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
+                                  boxShadow: [BoxShadow(color: primaryGreen.withOpacity(0.2), spreadRadius: 1, blurRadius: 5, offset: const Offset(0, 3),)],
                                 ),
                                 child: Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: const [
-                                      Icon(Icons.add_circle_outline, color: primaryGreen, size: 45),
+                                      Icon(Icons.add_circle_outline, color: primaryGreen, size: 45), // Icono de añadir.
                                       SizedBox(height: 15),
-                                      Text(
-                                        'Nueva fase',
-                                        style: TextStyle(
-                                          color: primaryGreen,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                          fontFamily: 'Montserrat',
-                                        ),
-                                      ),
+                                      Text('Nueva fase', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Montserrat'),),
                                     ],
                                   ),
                                 ),
@@ -533,29 +385,24 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
-                        phases.length + 1,
+                        phases.length + 1, // Puntos indicadores de página.
                         (index) => AnimatedContainer(
                           duration: const Duration(milliseconds: 150),
-                          width: _currentPage == index ? 12.0 : 8.0,
+                          width: _currentPage == index ? 12.0 : 8.0, // Tamaño del punto activo.
                           height: 8.0,
                           margin: const EdgeInsets.symmetric(horizontal: 4.0),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: _currentPage == index
-                                ? primaryGreen
-                                : mediumGrey.withOpacity(0.4),
+                            color: _currentPage == index ? primaryGreen : mediumGrey.withOpacity(0.4),
                           ),
                         ),
                       ),
                     ),
                   ],
                   const SizedBox(height: 30),
-                  const Text(
-                    'TAREAS PENDIENTES DEL PROYECTO',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat'),
-                  ),
+                  const Text('TAREAS PENDIENTES DEL PROYECTO', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat'),),
                   const SizedBox(height: 16),
-                  StreamBuilder<QuerySnapshot>(
+                  StreamBuilder<QuerySnapshot>( // Sección para tareas pendientes del proyecto.
                     stream: _tasksStream,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -583,13 +430,8 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
                             child: InkWell(
                               onTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => DetailsTaskScreen(
-                                    taskData: task,
-                                    taskId: taskId,
-                                  ),
-                                );
+                                // Muestra los detalles de la tarea en un diálogo.
+                                showDialog(context: context, builder: (context) => DetailsTaskScreen(taskData: task, taskId: taskId),);
                               },
                               borderRadius: BorderRadius.circular(12),
                               child: Padding(
@@ -600,10 +442,7 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            task['title'] ?? '',
-                                            style: const TextStyle(fontWeight: FontWeight.w600, color: darkGrey, fontSize: 16, fontFamily: 'Montserrat'),
-                                          ),
+                                          Text(task['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600, color: darkGrey, fontSize: 16, fontFamily: 'Montserrat'),),
                                           if (task['phase'] != null && (task['phase'] as String).isNotEmpty)
                                             Padding(
                                               padding: const EdgeInsets.only(top: 4.0),
@@ -615,7 +454,7 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        IconButton(
+                                        IconButton( // Botón para eliminar tarea.
                                           icon: const Icon(Icons.delete, color: errorRed, size: 26),
                                           tooltip: 'Eliminar tarea',
                                           onPressed: () async {
@@ -623,182 +462,29 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                                               context: context,
                                               builder: (context) => AlertDialog(
                                                 title: const Text('Eliminar tarea', style: TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
-                                                content: const Text('¿Estás seguro de que deseas eliminar esta tarea?', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () => Navigator.pop(context, false),
-                                                    child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold)),
-                                                  ),
-                                                  ElevatedButton(
-                                                    onPressed: () => Navigator.pop(context, true),
-                                                    style: ElevatedButton.styleFrom(
-                                                      backgroundColor: errorRed,
-                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                    ),
-                                                    child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)),
-                                                  ),
-                                                ],
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(15),
-                                                ),
-                                                elevation: 10,
-                                              ),
+                                                content: const Text('¿Estás seguro de que deseas eliminar esta tarea?',
+                                                ), // Fin del contenido.
+                                              )
                                             );
-                                            if (confirm == true) {
-                                              await _firestoreService.deleteTask(taskId);
-                                            }
-                                          },
-                                        ),
-                                        IconButton(
-                                          icon: Icon(
-                                            task['isCompleted'] == true ? Icons.undo : Icons.check_circle_outline,
-                                            color: task['isCompleted'] == true ? completedOrange : primaryGreen,
-                                            size: 26,
-                                          ),
-                                          tooltip: task['isCompleted'] == true
-                                              ? 'Marcar como pendiente'
-                                              : 'Completar tarea',
-                                          onPressed: () async {
-                                            await _firestoreService.toggleTaskCompleted(
-                                              taskId,
-                                              !(task['isCompleted'] == true),
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  Card(
-                    elevation: 6,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    margin: EdgeInsets.zero,
-                    child: ExpansionTile(
-                      backgroundColor: whiteColor,
-                      collapsedBackgroundColor: whiteColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      collapsedShape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      childrenPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      title: const Text(
-                        'Ver tareas completadas',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat'),
-                      ),
-                      children: [
-                        StreamBuilder<QuerySnapshot>(
-                          stream: FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(FirebaseAuth.instance.currentUser!.uid)
-                              .collection('userTasks')
-                              .where('projectId', isEqualTo: widget.projectId)
-                              .where('isCompleted', isEqualTo: true)
-                              .snapshots(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator(color: primaryGreen));
-                            }
-                            if (snapshot.hasError) {
-                              return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: errorRed, fontSize: 16, fontFamily: 'Roboto')));
-                            }
-                            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Text('No hay tareas completadas para este proyecto.', style: TextStyle(color: mediumGrey, fontSize: 16, fontStyle: FontStyle.italic)),
-                              );
-                            }
-                            final completedTasks = snapshot.data!.docs;
-                            return Column(
-                              children: completedTasks.map((doc) {
-                                final task = doc.data() as Map<String, dynamic>;
-                                return ListTile(
-                                  title: Text(
-                                    task['title'] ?? '',
-                                    style: const TextStyle(
-                                      decoration: TextDecoration.lineThrough,
-                                      color: mediumGrey,
-                                      fontFamily: 'Roboto',
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  subtitle: (task['phase'] != null && (task['phase'] as String).isNotEmpty)
-                                      ? Text(
-                                          'Fase: ${task['phase']}',
-                                          style: const TextStyle(
-                                            decoration: TextDecoration.lineThrough,
-                                            color: mediumGrey,
-                                            fontFamily: 'Roboto',
-                                            fontSize: 14,
-                                          ),
+                                          }
                                         )
-                                      : null,
-                                );
-                              }).toList(),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          Routes.facturacion,
-                          arguments: {
-                            'projectId': _projectId,
-                            'projectName': projectName,
-                          },
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryGreen,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 8,
-                        shadowColor: primaryGreen.withOpacity(0.4),
-                      ).copyWith(
-                        overlayColor: MaterialStateProperty.resolveWith<Color>(
-                          (Set<MaterialState> states) {
-                            if (states.contains(MaterialState.pressed)) {
-                              return whiteColor.withOpacity(0.2);
-                            }
-                            return primaryGreen;
-                          },
-                        ),
-                      ),
-                      icon: const Icon(Icons.receipt_long, color: whiteColor, size: 24),
-                      label: const Text(
-                        'FACTURAR PROYECTO',
-                        style: TextStyle(fontSize: 17, color: whiteColor, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
+                                      ]
+                                    )
+                                  ]
+                                )
+                              )
+                            )
+                          );
+                        }
+                      );
+                    }
+                  )
+                ]
+              )
+            )
           );
-        },
-      ),
+        }
+      )
     );
   }
 }

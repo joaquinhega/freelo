@@ -1,13 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import '../../services/firestore_service.dart';
-import 'widgets/details_task.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Para interactuar con Firestore (base de datos).
+import 'package:firebase_auth/firebase_auth.dart'; 
+import 'package:flutter/material.dart'; // Librería principal de Flutter para UI.
+import '../../services/firestore_service.dart'; 
+import 'widgets/details_task.dart'; 
 
 class DetailsPhaseScreen extends StatefulWidget {
-  final Map<String, dynamic> phaseData;
-  final String projectId;
-  final String phaseId;
+  final Map<String, dynamic> phaseData; // Datos de la fase actual.
+  final String projectId; // ID del proyecto al que pertenece la fase.
+  final String phaseId; // ID de la fase.
 
   const DetailsPhaseScreen({
     super.key,
@@ -22,29 +22,30 @@ class DetailsPhaseScreen extends StatefulWidget {
 
 class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
   final FirestoreService _firestoreService = FirestoreService();
-  late Stream<QuerySnapshot> _tasksStream;
+  late Stream<QuerySnapshot> _tasksStream; // Stream para tareas de esta fase.
 
-  // Controladores para edición
+  // Controladores de texto para editar la fase.
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
 
-  bool _editing = false;
-  bool _saving = false;
+  bool _editing = false; // Estado de edición de la fase.
+  bool _saving = false; // Estado de guardado.
 
-  // Define conjunto de colores consistentes
-  static const Color primaryGreen = Color(0xFF2E7D32); 
-  static const Color lightGreen = Color(0xFFE8F5E9); 
+  // Definición de colores principales para la UI.
+  static const Color primaryGreen = Color(0xFF2E7D32);
+  static const Color lightGreen = Color(0xFFE8F5E9);
   static const Color whiteColor = Colors.white;
-  static const Color offWhite = Color(0xFFF0F2F5); 
-  static const Color darkGrey = Color(0xFF212121); 
-  static const Color mediumGrey = Color(0xFF616161); 
-  static const Color errorRed = Color(0xFFD32F2F); 
-  static const Color completedOrange = Color(0xFFF57C00); 
+  static const Color offWhite = Color(0xFFF0F2F5);
+  static const Color darkGrey = Color(0xFF212121);
+  static const Color mediumGrey = Color(0xFF616161);
+  static const Color errorRed = Color(0xFFD32F2F);
+  static const Color completedOrange = Color(0xFFF57C00);
 
   @override
   void initState() {
     super.initState();
+    // Inicializa el stream de tareas y los controladores de texto con los datos de la fase.
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       _tasksStream = FirebaseFirestore.instance
@@ -64,79 +65,50 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
 
   @override
   void dispose() {
+    // Libera los controladores de texto al cerrar la pantalla.
     _nameController.dispose();
     _descController.dispose();
     _dateController.dispose();
     super.dispose();
   }
 
+  // Widget para mostrar un campo de información (no editable).
   Widget _infoField({required String label, required String value}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: darkGrey, 
-              fontFamily: 'Montserrat'), 
-        ),
-        const SizedBox(height: 6), 
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: darkGrey)),
+        const SizedBox(height: 6),
         Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: lightGreen.withOpacity(0.4), 
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: primaryGreen.withOpacity(0.3)), 
-          ),
-          child: Text(
-            value.isEmpty ? 'N/A' : value,
-            style: const TextStyle(fontSize: 16, color: darkGrey, fontFamily: 'Roboto'), 
-          ),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: lightGreen.withOpacity(0.4), borderRadius: BorderRadius.circular(12)),
+          child: Text(value.isEmpty ? 'N/A' : value, style: const TextStyle(color: darkGrey)),
         ),
       ],
     );
   }
 
+  // Widget para mostrar un campo de texto editable.
   Widget _editField(String label, TextEditingController controller, {TextInputType? keyboardType}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16), 
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(color: darkGrey, fontFamily: 'Roboto'), 
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: mediumGrey), 
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12), // More rounded borders
-            borderSide: BorderSide(color: primaryGreen.withOpacity(0.6)), 
-          ),
-          focusedBorder: OutlineInputBorder( // Focused border style
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: primaryGreen, width: 2),
-          ),
-          filled: true,
-          fillColor: whiteColor, 
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), 
-        ),
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: whiteColor,
       ),
     );
   }
 
+  // Guarda los cambios de la fase en Firestore.
   Future<void> _savePhase() async {
     setState(() => _saving = true);
-
     final name = _nameController.text.trim();
-    final desc = _descController.text.trim();
-    final date = _dateController.text.trim();
 
-    if (name.isEmpty) { 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("El título de la fase es obligatorio.")),
-      );
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("El título es obligatorio.")));
       setState(() => _saving = false);
       return;
     }
@@ -144,108 +116,69 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final projectRef = FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('projects')
-            .doc(widget.projectId);
-
+        final projectRef = FirebaseFirestore.instance.collection('users').doc(user.uid).collection('projects').doc(widget.projectId);
         final projectSnap = await projectRef.get();
         if (projectSnap.exists && projectSnap.data() != null) {
           final phases = List<Map<String, dynamic>>.from(projectSnap['phases'] ?? []);
-          final oldPhaseIndex = phases.indexWhere(
-            (p) => (p['id'] == widget.phaseId) || ((p['title'] ?? '') == (widget.phaseData['title'] ?? '') && widget.phaseId.isEmpty),
-          );
+          final oldPhaseIndex = phases.indexWhere((p) => (p['id'] == widget.phaseId) || ((p['title'] ?? '') == (widget.phaseData['title'] ?? '') && widget.phaseId.isEmpty));
 
           if (oldPhaseIndex != -1) {
             final oldPhase = phases[oldPhaseIndex];
-            phases.removeAt(oldPhaseIndex); 
-            
+            phases.removeAt(oldPhaseIndex);
             final newPhase = {
               ...oldPhase,
               'title': name,
-              'description': desc,
-              'date': date,
-              'id': widget.phaseId.isNotEmpty ? widget.phaseId : DateTime.now().millisecondsSinceEpoch.toString(), // Ensure ID is preserved or generated
+              'description': _descController.text.trim(),
+              'date': _dateController.text.trim(),
+              'id': widget.phaseId.isNotEmpty ? widget.phaseId : DateTime.now().millisecondsSinceEpoch.toString(),
             };
-            phases.add(newPhase); 
-
-            await projectRef.update({'phases': phases});
+            phases.add(newPhase);
+            await projectRef.update({'phases': phases}); // Actualiza el array de fases en el proyecto.
           }
         }
       }
-      setState(() {
-        _editing = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Fase actualizada correctamente.")),
-      );
+      setState(() => _editing = false); // Sale del modo edición.
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fase actualizada.")));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error al guardar: $e")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al guardar: $e")));
     }
     setState(() => _saving = false);
   }
 
+  // Elimina la fase del proyecto.
   Future<void> _deletePhase() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showDialog<bool>( // Pide confirmación al usuario.
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('¿Eliminar fase?', style: TextStyle(fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
-        content: const Text('¿Estás seguro que deseas eliminar esta fase? Esta acción no se puede rehacer.', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
+        title: const Text('¿Eliminar fase?'),
+        content: const Text('¿Estás seguro? Esta acción no se puede rehacer.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: errorRed,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 5,
-            ),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Eliminar')),
         ],
-        elevation: 10,
       ),
     );
     if (confirm == true) {
       try {
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
-          final projectRef = FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .collection('projects')
-              .doc(widget.projectId);
-
-          await projectRef.update({
-            'phases': FieldValue.arrayRemove([widget.phaseData])
-          });
+          final projectRef = FirebaseFirestore.instance.collection('users').doc(user.uid).collection('projects').doc(widget.projectId);
+          await projectRef.update({'phases': FieldValue.arrayRemove([widget.phaseData])}); // Elimina la fase del array.
         }
-        if (mounted) Navigator.of(context).pop();
+        if (mounted) Navigator.of(context).pop(); // Regresa a la pantalla anterior.
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error al eliminar la fase: $e")),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al eliminar: $e")));
       }
     }
   }
 
+  // Elimina una tarea específica.
   Future<void> _deleteTask(String taskId) async {
     try {
-      await _firestoreService.deleteTask(taskId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tarea eliminada correctamente.")),
-      );
+      await _firestoreService.deleteTask(taskId); // Llama al servicio de Firestore para eliminar.
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tarea eliminada.")));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error al eliminar la tarea: $e")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al eliminar tarea: $e")));
     }
   }
 
@@ -256,135 +189,43 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(color: darkGrey), 
-        title: Text(
-          'Fase',
-          style: const TextStyle(
-              color: darkGrey, 
-              fontWeight: FontWeight.bold,
-              fontSize: 24, 
-              fontFamily: 'Montserrat'), 
-          overflow: TextOverflow.ellipsis,
-        ),
-        backgroundColor: whiteColor, 
-        elevation: 4, 
-        centerTitle: false,
-        toolbarHeight: 90, 
-        surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder( 
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20),
-          ),
-        ),
+        leading: const BackButton(color: darkGrey),
+        title: const Text('Fase', style: TextStyle(color: darkGrey, fontWeight: FontWeight.bold)),
+        backgroundColor: whiteColor,
         actions: [
           if (!_editing)
-            IconButton(
-              icon: const Icon(Icons.edit, size: 26, color: primaryGreen),
-              tooltip: 'Editar fase',
-              onPressed: () {
-                setState(() {
-                  _editing = true;
-                });
-              },
-            ),
-          IconButton(
-            icon: const Icon(Icons.delete, size: 26, color: errorRed),
-            tooltip: 'Eliminar fase',
-            onPressed: _deletePhase,
-          ),
+            IconButton(icon: const Icon(Icons.edit, color: primaryGreen), tooltip: 'Editar', onPressed: () => setState(() => _editing = true)), // Botón para activar edición.
+          IconButton(icon: const Icon(Icons.delete, color: errorRed), tooltip: 'Eliminar fase', onPressed: _deletePhase), // Botón para eliminar fase.
         ],
       ),
-      backgroundColor: offWhite, 
+      backgroundColor: offWhite,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20), 
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Sección de información/edición de la fase
             Card(
-              elevation: 6, 
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15), 
-              ),
-              margin: EdgeInsets.zero,
-              child: ExpansionTile( 
-                backgroundColor: whiteColor,
-                collapsedBackgroundColor: whiteColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                collapsedShape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                childrenPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                title: Text(
-                  _editing ? 'Editar Información de Fase' : 'Información de la Fase',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat'),
-                ),
-                trailing: _editing
-                    ? null 
-                    : const Icon(Icons.keyboard_arrow_down, size: 28, color: mediumGrey), 
+              elevation: 6,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              child: ExpansionTile( // Sección expandible para información de la fase.
+                title: Text(_editing ? 'Editar Fase' : 'Información de la Fase', style: const TextStyle(fontWeight: FontWeight.bold)),
+                trailing: _editing ? null : const Icon(Icons.keyboard_arrow_down),
                 children: [
-                  const Divider(height: 25, thickness: 1, color: lightGreen),
-                  if (_editing) ...[
-                    _editField('Nombre de la fase', _nameController),
+                  const Divider(height: 25),
+                  if (_editing) ...[ // Muestra campos editables y botones si está editando.
+                    _editField('Nombre', _nameController),
                     _editField('Descripción', _descController),
-                    _editField('Fecha de entrega', _dateController), 
-                    const SizedBox(height: 12),
+                    _editField('Fecha', _dateController),
                     Row(
                       children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _saving ? null : _savePhase,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryGreen,
-                              padding: const EdgeInsets.symmetric(vertical: 16), 
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 8, 
-                              shadowColor: primaryGreen.withOpacity(0.4),
-                            ),
-                            child: _saving
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: whiteColor),
-                                  )
-                                : const Text('Guardar', style: TextStyle(color: whiteColor, fontSize: 17, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
-                          ),
-                        ),
-                        const SizedBox(width: 16), 
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _saving
-                                ? null
-                                : () {
-                                    setState(() {
-                                      _editing = false;
-                                      _nameController.text = widget.phaseData['title'] ?? '';
-                                      _descController.text = widget.phaseData['description'] ?? '';
-                                      _dateController.text = widget.phaseData['date'] ?? '';
-                                    });
-                                  },
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16), 
-                              side: BorderSide(color: mediumGrey.withOpacity(0.6), width: 1.5),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 4, // Added shadow
-                              shadowColor: mediumGrey.withOpacity(0.2),
-                            ),
-                            child: const Text('Cancelar', style: TextStyle(color: darkGrey, fontSize: 17, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
-                          ),
-                        ),
+                        Expanded(child: ElevatedButton(onPressed: _saving ? null : _savePhase, child: _saving ? const CircularProgressIndicator() : const Text('Guardar'))),
+                        const SizedBox(width: 16),
+                        Expanded(child: OutlinedButton(onPressed: _saving ? null : () => setState(() => _editing = false), child: const Text('Cancelar'))),
                       ],
                     ),
-                  ] else ...[
-                    _infoField(label: 'NOMBRE DE LA FASE', value: phaseName),
-                    const SizedBox(height: 16), 
+                  ] else ...[ // Muestra campos de solo lectura si no está editando.
+                    _infoField(label: 'NOMBRE', value: phaseName),
+                    const SizedBox(height: 16),
                     _infoField(label: 'DESCRIPCIÓN', value: phaseDescription),
                     const SizedBox(height: 16),
                   ],
@@ -392,35 +233,19 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
               ),
             ),
             const SizedBox(height: 30),
-            const Text(
-              'TAREAS DE LA FASE',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: darkGrey,
-                  fontFamily: 'Montserrat'),
-            ),
+            const Text('TAREAS DE LA FASE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: darkGrey)),
             const SizedBox(height: 16),
-            StreamBuilder<QuerySnapshot>(
+            StreamBuilder<QuerySnapshot>( // Muestra las tareas de la fase en tiempo real.
               stream: _tasksStream,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                      child: CircularProgressIndicator(
-                          color: primaryGreen));
+                  return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(
-                      child: Text('Error: ${snapshot.error}',
-                          style: const TextStyle(color: errorRed, fontSize: 16, fontFamily: 'Roboto')));
+                  return Center(child: Text('Error: ${snapshot.error}'));
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(12.0),
-                        child: Text('No hay tareas para esta fase.',
-                            style: TextStyle(color: mediumGrey, fontSize: 16, fontStyle: FontStyle.italic)),
-                      ));
+                  return const Center(child: Text('No hay tareas para esta fase.'));
                 }
 
                 final tasks = snapshot.data!.docs;
@@ -432,101 +257,33 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
                     final task = tasks[index].data() as Map<String, dynamic>;
                     final taskId = tasks[index].id;
                     return Card(
-                      color: whiteColor,
-                      elevation: 4, 
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 0), 
-                      child: InkWell( 
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      child: InkWell(
                         onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => DetailsTaskScreen(
-                              taskData: task,
-                              taskId: taskId,
-                            ),
-                          );
+                          showDialog(context: context, builder: (context) => DetailsTaskScreen(taskData: task, taskId: taskId));
                         },
-                        borderRadius: BorderRadius.circular(12),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.all(12),
                           child: Row(
                             children: [
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(task['title'] ?? '',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                            color: darkGrey,
-                                            fontFamily: 'Montserrat')),
+                                    Text(task['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                                     if (task['project'] != null && (task['project'] as String).isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4.0),
-                                        child: Text('Proyecto: ${task['project']}',
-                                            style: const TextStyle(color: mediumGrey, fontSize: 14, fontFamily: 'Roboto')),
-                                      ),
+                                      Text('Proyecto: ${task['project']}', style: const TextStyle(color: mediumGrey, fontSize: 14)),
                                   ],
                                 ),
                               ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: errorRed, size: 26), 
-                                    tooltip: 'Eliminar tarea',
-                                    onPressed: () async {
-                                      final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Text('Eliminar tarea', style: TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
-                                          content: const Text('¿Estás seguro de que deseas eliminar esta tarea?', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context, false),
-                                              child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold)),
-                                            ),
-                                            ElevatedButton(
-                                              onPressed: () => Navigator.pop(context, true),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: errorRed,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                              ),
-                                              child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)),
-                                            ),
-                                          ],
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(15),
-                                          ),
-                                          elevation: 10,
-                                        ),
-                                      );
-                                      if (confirm == true) {
-                                        await _deleteTask(taskId);
-                                      }
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: Icon(
-                                      task['isCompleted'] == true ? Icons.undo : Icons.check_circle_outline, 
-                                      color: task['isCompleted'] == true ? completedOrange : primaryGreen, 
-                                      size: 26, // Larger icon
-                                    ),
-                                    tooltip: task['isCompleted'] == true
-                                        ? 'Marcar como pendiente'
-                                        : 'Completar tarea',
-                                    onPressed: () async {
-                                      await _firestoreService.toggleTaskCompleted(
-                                        taskId,
-                                        !(task['isCompleted'] == true),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
+                              IconButton(icon: const Icon(Icons.delete, color: errorRed), onPressed: () async {
+                                final confirm = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('Eliminar tarea'), content: const Text('¿Seguro?'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('No')), ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sí'))]));
+                                if (confirm == true) await _deleteTask(taskId);
+                              }),
+                              IconButton(icon: Icon(task['isCompleted'] == true ? Icons.undo : Icons.check_circle_outline, color: task['isCompleted'] == true ? completedOrange : primaryGreen), onPressed: () async {
+                                await _firestoreService.toggleTaskCompleted(taskId, !(task['isCompleted'] == true));
+                              }),
                             ],
                           ),
                         ),
