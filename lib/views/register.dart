@@ -48,15 +48,14 @@ class RegisterState extends State<Register> {
 
     final user = await AuthService().register(email, password);
     if (user != null) {
-      // Guardar freelancerDetails con los datos ingresados
-      await FirestoreService().createFreelancerDetails(
-        user.uid,
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        phone: phone,
-        address: address, // Puede ser vacío
-      );
+      // Guarda los datos del usuario en Firestore (colección users)
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'nombre': '$firstName $lastName',
+        'email': email,
+        'telefono': phone,
+        'direccion': address,
+      });
+      // También puedes guardar detalles adicionales en otra colección si lo necesitas
       Navigator.pushReplacementNamed(context, Routes.dashboard);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -274,24 +273,13 @@ class RegisterState extends State<Register> {
                     try {
                       final user = await AuthService().signInWithGoogle();
                       if (user != null) {
-                        // Verifica si ya existe freelancerDetails
-                        final doc = await FirebaseFirestore.instance
-                            .collection('users')
-                            .doc(user.uid)
-                            .collection('profile')
-                            .doc('freelancerDetails')
-                            .get();
-                        if (!doc.exists) {
-                          // Si no existe, lo crea con los datos de Google y deja teléfono/dirección vacíos
-                          await FirestoreService().createFreelancerDetails(
-                            user.uid,
-                            firstName: user.displayName?.split(' ').first ?? '',
-                            lastName: user.displayName?.split(' ').skip(1).join(' ') ?? '',
-                            email: user.email ?? '',
-                            phone: '',
-                            address: '',
-                          );
-                        }
+                        // Guarda datos mínimos si es Google
+                        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+                          'nombre': user.displayName ?? '',
+                          'email': user.email ?? '',
+                          'telefono': '',
+                          'direccion': '',
+                        });
                         Navigator.pushReplacementNamed(context, Routes.dashboard);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(

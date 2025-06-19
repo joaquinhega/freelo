@@ -17,7 +17,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Map<String, dynamic>? _freelancerDetails;
 
   final bool _notificaciones = false;
-
   bool _isGoogleLoggedIn = false;
 
   final FirestoreService _firestoreService = FirestoreService();
@@ -125,26 +124,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     try {
-      if (_isGoogleLoggedIn) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(_currentUser!.uid)
-            .collection('profile')
-            .doc('freelancerDetails')
-            .update({
-              'phone': phone,
-              'address': address,
-            });
-      } else {
-        await _firestoreService.createFreelancerDetails(
-          _currentUser!.uid,
-          firstName: firstName,
-          lastName: lastName,
-          email: email,
-          phone: phone,
-          address: address,
-        );
-      }
+      // Permitir siempre editar todos los campos
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .collection('profile')
+          .doc('freelancerDetails')
+          .set({
+            'firstName': firstName,
+            'lastName': lastName,
+            'email': email,
+            'phone': phone,
+            'address': address,
+          }, SetOptions(merge: true));
+
+      // Sincroniza el nombre en users/{uid}
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .set({
+            'nombre': '$firstName $lastName',
+          }, SetOptions(merge: true));
+
       setState(() {
         _editing = false;
       });
@@ -160,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _saving = false);
   }
 
-  Widget _infoTile(String label, String value, {IconData? icon, VoidCallback? onEditPressed, bool showEditIcon = true}) {
+  Widget _infoTile(String label, String value, {IconData? icon}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -188,20 +189,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _editTile(String label, TextEditingController controller, {IconData? icon, bool enabled = true, TextInputType? keyboardType}) {
+  Widget _editTile(String label, TextEditingController controller, {IconData? icon, TextInputType? keyboardType}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
       child: TextField(
         controller: controller,
-        enabled: enabled,
         keyboardType: keyboardType,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: icon != null ? Icon(icon, color: Colors.grey[600]) : null,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
-          fillColor: enabled ? Colors.white : const Color(0xFFF2F2F7),
+          fillColor: Colors.white,
         ),
       ),
     );
@@ -245,7 +245,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final freelancer = _freelancerDetails ?? {};
 
-   return Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: const Text('Configuración'),
         automaticallyImplyLeading: false,
