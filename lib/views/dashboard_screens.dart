@@ -21,7 +21,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   static const Color offWhite = Color(0xFFF8F8F8);
   static const Color darkGrey = Color(0xFF333333);
   static const Color mediumGrey = Color(0xFF757575);
-  static const Color warningOrange = Color(0xFFFF9800);
   static const Color softGreenGradientStart = Color(0xFF4CAF50);
 
   // Función principal: Obtiene el nombre del usuario desde Firestore (perfil o documento) o Firebase Auth.

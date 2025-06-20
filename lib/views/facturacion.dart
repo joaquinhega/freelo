@@ -33,13 +33,11 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
 
   // Definición de colores personalizados para la UI.
   static const Color primaryGreen = Color(0xFF2E7D32);
-  static const Color lightGreen = Color(0xFFE8F5E9);
   static const Color whiteColor = Colors.white;
   static const Color offWhite = Color(0xFFF0F2F5);
   static const Color darkGrey = Color(0xFF212121);
   static const Color mediumGrey = Color(0xFF616161);
   static const Color accentBlue = Color(0xFF2196F3);
-  static const Color warningOrange = Color(0xFFFF9800);
   static const Color errorRed = Color(0xFFD32F2F);
 
   // Detalles del freelancer (usuario actual)
@@ -212,7 +210,7 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
               'notasCondiciones': _notasCondicionesController.text.trim(),
               'timestamp': FieldValue.serverTimestamp(),
               'projectId': _projectId,
-              'projectName': _empresaController.text.trim(), // <- projectName es igual a clienteEmpresa
+              'projectName': _empresaController.text.trim(),
             });
 
         _showSnackBar('Factura guardada en la nube con éxito', isError: false);
