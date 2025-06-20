@@ -1,5 +1,6 @@
 {
     "IDX.aI.enableInlineCompletion": true,
     "IDX.aI.enableCodebaseIndexing": true,
-    "bitoAI.codeCompletion.enableAutoCompletion": false
+    "bitoAI.codeCompletion.enableAutoCompletion": false,
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
