@@ -1,11 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart'; //Importa Firestore para manejar la base de datos
+import 'dart:async'; //Maneja operaciones asíncronas a través de Future y Stream
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
+import 'package:flutter/gestures.dart'; //Importa gestos para manejar eventos de desplazamiento
 import 'widgets/Footer.dart';
 import 'widgets/new_tarea.dart';
 import 'widgets/details_task.dart';
-import '../services/firestore_service.dart';
+import '../services/firestore_service.dart'; //Importa el servicio Firestore para interactuar con la base de datos
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -22,6 +22,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   static const Color darkGrey = Color(0xFF333333);
   static const Color mediumGrey = Color(0xFF757575);
   static const Color softGreenGradientStart = Color(0xFF4CAF50);
+
   final FirestoreService _firestoreService = FirestoreService();
 
   Future<String> _getUserName() async => await _firestoreService.getUserName();
@@ -29,6 +30,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<int> _getCantidadProyectosActivos() async => await _firestoreService.getCantidadProyectosActivos();
   Future<int> _getCantidadTareasPendientes() async => await _firestoreService.getCantidadTareasPendientes();
 
+  /// Crea una tarjeta de resumen miniatura con un icono, título, valor y color.
   Widget _miniResumenCard({
     required IconData icon,
     required String title,
@@ -70,6 +72,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  /// Crea una tarjeta de sección con un widget hijo, color y gradiente opcionales.
   Widget _sectionCard({required Widget child, Color? color, Gradient? gradient}) {
     return Container(
       width: double.infinity,
@@ -91,6 +94,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  /// Crea una tarjeta de acción con un icono, etiqueta, color, color de borde y gradiente opcionales.
   Widget _actionCard({
     required IconData icon,
     required String label,

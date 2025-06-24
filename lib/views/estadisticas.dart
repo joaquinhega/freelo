@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'package:fl_chart/fl_chart.dart'; // Para gráficos
 import 'widgets/Footer.dart';
 import '../services/firestore_service.dart';
 
@@ -8,7 +8,7 @@ class EstadisticasScreen extends StatelessWidget {
 
   final FirestoreService _firestoreService = FirestoreService();
 
-  // Helper widget para los ítems del Summary Component
+  // Método para construir un ítem de resumen
   Widget _buildSummaryItem({required IconData icon, required String label, required String value}) {
     return Column(
       children: [
@@ -41,14 +41,13 @@ class EstadisticasScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Summary Component
-              FutureBuilder<List<double>>(
+              FutureBuilder<List<double>>( // Obtiene datos de ingresos mensuales, proyectos activos y tareas pendientes
                 future: Future.wait([
                   _firestoreService.getIngresoMensualActual(),
                   _firestoreService.getCantidadProyectosActivos().then((v) => v.toDouble()),
                   _firestoreService.getCantidadTareasPendientes().then((v) => v.toDouble()),
                 ]),
-                builder: (context, snapshot) {
+                builder: (context, snapshot) { // Muestra un resumen de estadísticas
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
@@ -62,7 +61,7 @@ class EstadisticasScreen extends StatelessWidget {
                       color: Colors.green[100],
                       borderRadius: BorderRadius.circular(15),
                     ),
-                    child: Row(
+                    child: Row( // Muestra un resumen de estadísticas
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _buildSummaryItem(
@@ -88,6 +87,7 @@ class EstadisticasScreen extends StatelessWidget {
               const SizedBox(height: 24),
               const Text('Ingresos mensuales', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
+              // Gráfico de ingresos por mes
               SizedBox(
                 height: 180,
                 child: FutureBuilder<List<double>>(
@@ -175,6 +175,7 @@ class EstadisticasScreen extends StatelessWidget {
               const SizedBox(height: 24),
               const Text('Ingresos por proyecto', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
+              // Gráfico de ingresos por proyecto
               SizedBox(
                 height: 250,
                 child: FutureBuilder<Map<String, double>>(

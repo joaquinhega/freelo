@@ -1,3 +1,5 @@
+// modal para crear un nuevo proyecto
+
 import 'package:flutter/material.dart';
 import '../services/firestore_service.dart';
 
@@ -50,6 +52,7 @@ class _NewClientScreenState extends State<NewClientScreen> {
     super.dispose();
   }
 
+  // Método para crear un campo de entrada reutilizable
   Widget _campoEntrada({
     required TextEditingController controlador,
     required String textoAyuda,
@@ -73,6 +76,7 @@ class _NewClientScreenState extends State<NewClientScreen> {
     );
   }
 
+  // Método para agregar una nueva fase al proyecto
   void _addPhase() async {
     final result = await showDialog<Map<String, String>>(
       context: context,
@@ -118,7 +122,7 @@ class _NewClientScreenState extends State<NewClientScreen> {
               onPressed: () {
                 if (titleController.text.trim().isEmpty) return;
                 Navigator.pop(context, {
-                  'id': DateTime.now().millisecondsSinceEpoch.toString(), // Add a unique ID
+                  'id': DateTime.now().millisecondsSinceEpoch.toString(),
                   'title': titleController.text.trim(),
                   'description': descController.text.trim(),
                   'date': 'N/A', // Default date
@@ -144,6 +148,7 @@ class _NewClientScreenState extends State<NewClientScreen> {
     }
   }
 
+  // Método para eliminar una fase por su índice
   void _eliminarFase(int indice) {
     setState(() {
       _fases.removeAt(indice);
@@ -209,13 +214,13 @@ class _NewClientScreenState extends State<NewClientScreen> {
                     return Theme(
                       data: ThemeData.light().copyWith(
                         colorScheme: const ColorScheme.light(
-                          primary: primaryGreen, // header background color
-                          onPrimary: whiteColor, // header text color
-                          onSurface: darkGrey, // body text color
+                          primary: primaryGreen, 
+                          onPrimary: whiteColor,
+                          onSurface: darkGrey, 
                         ),
                         textButtonTheme: TextButtonThemeData(
                           style: TextButton.styleFrom(
-                            foregroundColor: primaryGreen, // button text color
+                            foregroundColor: primaryGreen,
                           ),
                         ),
                       ),
@@ -239,7 +244,7 @@ class _NewClientScreenState extends State<NewClientScreen> {
                     setState(() {
                       _tieneFases = valor ?? false;
                       if (!_tieneFases) {
-                        _fases.clear(); // Clear phases if unchecked
+                        _fases.clear(); 
                       }
                     });
                   },
@@ -250,7 +255,7 @@ class _NewClientScreenState extends State<NewClientScreen> {
             ),
             const SizedBox(height: 24),
 
-            if (_tieneFases) ...[
+            if (_tieneFases) ...[ // Mostrar campos de fases si se selecciona
               const Divider(height: 1, color: lightGreen),
               const SizedBox(height: 16),
               const Text(
@@ -395,7 +400,7 @@ class _NewClientScreenState extends State<NewClientScreen> {
                       description: _controladorDescripcion.text,
                       date: _controladorFecha.text,
                       hasPhases: _tieneFases,
-                      phases: _fases, // Now sending the _fases list directly
+                      phases: _fases, 
                       hasClient: _tieneCliente,
                       clientInfo: datosCliente,
                     );

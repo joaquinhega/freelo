@@ -49,8 +49,8 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
     _initTaskStreams();
   }
 
+  // Centraliza la consulta de tareas usando FirestoreService para evitar redundancia
   void _initTaskStreams() {
-    // Centraliza la consulta de tareas usando FirestoreService para evitar redundancia
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       _tasksStream = _firestoreService.getTasksByPhaseStream(
@@ -76,6 +76,7 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
     super.dispose();
   }
 
+  // Widget para mostrar campos de información
   Widget _infoField({required String label, required String value}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,6 +97,7 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
     );
   }
 
+  // Widget para editar campos de texto
   Widget _editField(String label, TextEditingController controller, {TextInputType? keyboardType, int maxLines = 1}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,6 +132,7 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
     );
   }
 
+  // Método para guardar la fase
   Future<void> _savePhase() async {
     setState(() => _saving = true);
     final name = _nameController.text.trim();
@@ -208,6 +211,7 @@ class _DetailsPhaseScreenState extends State<DetailsPhaseScreen> {
     }
   }
 
+  // Método para eliminar una tarea
   Future<void> _deleteTask(String taskId) async {
     try {
       await _firestoreService.deleteTask(taskId);

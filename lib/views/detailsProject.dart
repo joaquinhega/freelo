@@ -1,15 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart'; // Autenticación de Firebase.
 import 'package:flutter/material.dart'; // Widgets de Flutter para UI.
 import 'package:cloud_firestore/cloud_firestore.dart'; // Base de datos Firestore.
-import 'package:flutter/gestures.dart'; // Para PointerScrollEvent.
-import '../services/firestore_service.dart'; // Servicio para operaciones con Firestore.
-import '../routes/routes.dart'; // Definición de rutas de navegación.
-import 'widgets/details_task.dart'; // Widget para detalles de una tarea.
-import 'detailsPhase.dart'; // Pantalla de detalles de una fase.
+import 'package:flutter/gestures.dart'; // Para PointerScrollEvent, gestos de entrada.
+import '../services/firestore_service.dart'; 
+import '../routes/routes.dart'; 
+import 'widgets/details_task.dart'; 
+import 'detailsPhase.dart'; 
 
 class DetailsProjectScreen extends StatefulWidget {
-  final Map<String, dynamic> projectData; // Datos del proyecto a mostrar.
-  final String projectId; // ID del proyecto.
+  final Map<String, dynamic> projectData; 
+  final String projectId; 
 
   const DetailsProjectScreen({
     super.key,
@@ -22,16 +22,16 @@ class DetailsProjectScreen extends StatefulWidget {
 }
 
 class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
-  late PageController _pageController; // Controlador para el PageView de fases.
-  int _currentPage = 0; // Índice de la página actual del PageView.
-  bool _saving = false; // Indicador de estado de guardado.
+  late PageController _pageController;
+  int _currentPage = 0; 
+  bool _saving = false; 
 
   final FirestoreService _firestoreService = FirestoreService(); // Instancia del servicio de Firestore.
 
   late Stream<QuerySnapshot> _tasksStream; // Stream para tareas pendientes del proyecto.
 
-  Map<String, dynamic> _projectData = {}; // Datos del proyecto, mutable para actualizaciones.
-  String _projectId = ''; // ID del proyecto.
+  Map<String, dynamic> _projectData = {}; 
+  String _projectId = ''; 
 
   // Definición de colores para la UI.
   static const Color primaryGreen = Color(0xFF2E7D32);
@@ -43,24 +43,24 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
   static const Color errorRed = Color(0xFFD32F2F);
   static const Color completedOrange = Color(0xFFFFA726);
 
+  // Inicializa el controlador del PageView y los datos del proyecto.
   @override
-void initState() {
-  super.initState();
-  _pageController = PageController(viewportFraction: 0.85);
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.85);
 
-  _projectData = Map<String, dynamic>.from(widget.projectData);
-  _projectId = widget.projectId;
+    _projectData = Map<String, dynamic>.from(widget.projectData);
+    _projectId = widget.projectId;
 
-  // Usa el servicio centralizado para obtener el stream de tareas pendientes del proyecto
-  _tasksStream = _firestoreService.getTasksByProjectStream(
-    projectId: widget.projectId,
-    isCompleted: false,
-  );
-}
+    _tasksStream = _firestoreService.getTasksByProjectStream(
+      projectId: widget.projectId,
+      isCompleted: false,
+    );
+  }
 
   @override
   void dispose() {
-    _pageController.dispose(); // Libera el controlador del PageView.
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -72,21 +72,21 @@ void initState() {
       arguments: {'initialData': _projectData,}, // Pasa los datos actuales para editar.
     );
     if (result != null && result is Map<String, dynamic>) {
-      setState(() => _saving = true); // Activa el estado de guardado.
+      setState(() => _saving = true); 
       try {
         await _firestoreService.updateProject(
           userId: FirebaseAuth.instance.currentUser!.uid,
           projectId: _projectId,
-          data: result, // Datos actualizados.
+          data: result, 
         );
         setState(() {
-          _projectData = {..._projectData, ...result}; // Fusiona los datos actualizados.
+          _projectData = {..._projectData, ...result}; 
         });
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Proyecto actualizado correctamente.")));
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al guardar: $e")));
       }
-      setState(() => _saving = false); // Desactiva el estado de guardado.
+      setState(() => _saving = false); 
     }
   }
 
@@ -94,7 +94,7 @@ void initState() {
   Future<void> _deleteProject() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog( // Diálogo de confirmación.
+      builder: (context) => AlertDialog( 
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('¿Eliminar proyecto?', style: TextStyle(fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
         content: const Text('¿Estás seguro que deseas eliminar este proyecto? Esta acción no se puede deshacer.', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
@@ -115,14 +115,14 @@ void initState() {
         elevation: 10,
       ),
     );
-    if (confirm == true) { // Si el usuario confirma.
+    if (confirm == true) {
       try {
         await _firestoreService.deleteProject(
           userId: FirebaseAuth.instance.currentUser!.uid,
           projectId: _projectId,
         );
         if (mounted) {
-          Navigator.of(context).pop(); // Vuelve a la pantalla anterior.
+          Navigator.of(context).pop();
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error al eliminar: $e")));
@@ -141,7 +141,7 @@ void initState() {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: lightGreen.withOpacity(0.4), // Fondo semitransparente.
+            color: lightGreen.withOpacity(0.4), 
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: primaryGreen.withOpacity(0.3)),
           ),
@@ -153,22 +153,22 @@ void initState() {
 
   @override
   Widget build(BuildContext context) {
-    final projectName = _projectData['title'] ?? 'Proyecto Desconocido'; // Título del proyecto.
-    final hasPhases = _projectData['hasPhases'] ?? false; // Indica si el proyecto tiene fases.
-    final phases = (_projectData['phases'] as List<dynamic>?)?.map((e) => e as Map<String, dynamic>).toList() ?? []; // Lista de fases.
-    final client = (_projectData.containsKey('client') && _projectData['client'] != null) ? _projectData['client'] as Map<String, dynamic> : null; // Datos del cliente.
+    final projectName = _projectData['title'] ?? 'Proyecto Desconocido'; 
+    final hasPhases = _projectData['hasPhases'] ?? false; 
+    final phases = (_projectData['phases'] as List<dynamic>?)?.map((e) => e as Map<String, dynamic>).toList() ?? []; 
+    final client = (_projectData.containsKey('client') && _projectData['client'] != null) ? _projectData['client'] as Map<String, dynamic> : null; 
 
     return Scaffold(
-      backgroundColor: offWhite, // Color de fondo de la pantalla.
+      backgroundColor: offWhite,
       appBar: AppBar(
-        leading: BackButton(color: darkGrey), // Botón de retroceso.
+        leading: BackButton(color: darkGrey),
         title: Text(projectName, style: const TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontSize: 24, fontFamily: 'Montserrat'), overflow: TextOverflow.ellipsis),
         backgroundColor: whiteColor,
         elevation: 4,
         centerTitle: false,
         toolbarHeight: 90,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(20))), // Forma de la barra de título.
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(20))), 
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -183,7 +183,7 @@ void initState() {
                     elevation: 6,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     margin: EdgeInsets.zero,
-                    child: ExpansionTile( // Sección expandible para la información del proyecto.
+                    child: ExpansionTile(
                       backgroundColor: whiteColor,
                       collapsedBackgroundColor: whiteColor,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -194,7 +194,7 @@ void initState() {
                       trailing: IconButton(
                         icon: const Icon(Icons.edit, size: 26, color: primaryGreen),
                         tooltip: 'Editar proyecto',
-                        onPressed: _saving ? null : _editProject, // Deshabilita el botón si está guardando.
+                        onPressed: _saving ? null : _editProject, 
                       ),
                       children: [
                         const Divider(height: 25, thickness: 1, color: lightGreen),
@@ -203,7 +203,7 @@ void initState() {
                         _infoField(label: 'DESCRIPCIÓN', value: _projectData['description'] ?? 'Sin descripción'),
                         const SizedBox(height: 16),
                         _infoField(label: 'FECHA DE ENTREGA', value: _projectData['date'] ?? 'N/A'),
-                        if (_projectData['hasClient'] == true) ...[ // Muestra información del cliente si existe.
+                        if (_projectData['hasClient'] == true) ...[ 
                           const SizedBox(height: 24),
                           const Text('CLIENTE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: darkGrey, fontFamily: 'Montserrat')),
                           const SizedBox(height: 16),
@@ -218,7 +218,7 @@ void initState() {
                         const SizedBox(height: 24),
                         SizedBox(
                           width: double.infinity,
-                          child: ElevatedButton.icon( // Botón para eliminar el proyecto.
+                          child: ElevatedButton.icon( 
                             onPressed: _deleteProject,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: errorRed,
@@ -241,7 +241,7 @@ void initState() {
                       ],
                     ),
                   ),
-                  if (hasPhases && phases.isNotEmpty) ...[ // Sección para fases del proyecto si existen.
+                  if (hasPhases && phases.isNotEmpty) ...[ // Fases del proyecto (si existen).
                     const SizedBox(height: 30),
                     const Text('FASES DEL PROYECTO', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
                     const SizedBox(height: 20),
@@ -261,25 +261,24 @@ void initState() {
                           height: 240,
                           child: PageView.builder(
                             controller: _pageController,
-                            itemCount: phases.length + 1, // +1 para el botón de "Nueva fase".
+                            itemCount: phases.length + 1, 
                             onPageChanged: (int page) {
-                              setState(() => _currentPage = page); // Actualiza el indicador de página.
+                              setState(() => _currentPage = page);
                             },
                             itemBuilder: (context, index) {
                               if (index < phases.length) {
                                 final phase = phases[index];
                                 return GestureDetector(
                                   onTap: () {
-                                    // Navega a la pantalla de detalles de la fase.
                                     Navigator.push(context, MaterialPageRoute(builder: (_) => DetailsPhaseScreen(phaseData: phase, projectId: _projectId, phaseId: phase['id'] ?? '',)));
                                   },
                                   child: Container(
                                     margin: const EdgeInsets.symmetric(horizontal: 10.0),
                                     padding: const EdgeInsets.all(20),
                                     decoration: BoxDecoration(
-                                      gradient: const LinearGradient(colors: [lightGreen, whiteColor], begin: Alignment.topLeft, end: Alignment.bottomRight,), // Degradado.
+                                      gradient: const LinearGradient(colors: [lightGreen, whiteColor], begin: Alignment.topLeft, end: Alignment.bottomRight,),
                                       borderRadius: BorderRadius.circular(18),
-                                      boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), spreadRadius: 2, blurRadius: 8, offset: const Offset(0, 4),)], // Sombra.
+                                      boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), spreadRadius: 2, blurRadius: 8, offset: const Offset(0, 4),)],
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,7 +329,7 @@ void initState() {
                                       builder: (context) {
                                         final TextEditingController titleController = TextEditingController();
                                         final TextEditingController descController = TextEditingController();
-                                        return AlertDialog( // Diálogo para añadir nueva fase.
+                                        return AlertDialog( 
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                           title: const Text('Nueva fase', style: TextStyle(fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
                                           content: SingleChildScrollView(
@@ -382,7 +381,7 @@ void initState() {
                                       child: Column(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: const [
-                                          Icon(Icons.add_circle_outline, color: primaryGreen, size: 45), // Icono de añadir.
+                                          Icon(Icons.add_circle_outline, color: primaryGreen, size: 45),
                                           SizedBox(height: 15),
                                           Text('Nueva fase', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Montserrat'),),
                                         ],
@@ -400,10 +399,10 @@ void initState() {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(
-                        phases.length + 1, // Puntos indicadores de página.
+                        phases.length + 1, 
                         (index) => AnimatedContainer(
                           duration: const Duration(milliseconds: 150),
-                          width: _currentPage == index ? 12.0 : 8.0, // Tamaño del punto activo.
+                          width: _currentPage == index ? 12.0 : 8.0,
                           height: 8.0,
                           margin: const EdgeInsets.symmetric(horizontal: 4.0),
                           decoration: BoxDecoration(
@@ -469,7 +468,7 @@ void initState() {
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        IconButton( // Botón para eliminar tarea.
+                                        IconButton( 
                                           icon: const Icon(Icons.delete, color: errorRed, size: 26),
                                           tooltip: 'Eliminar tarea',
                                           onPressed: () async {
@@ -516,6 +515,7 @@ void initState() {
                     }
                   ),
                   const SizedBox(height: 30),
+                  // Sección para tareas completadas del proyecto.
                   Card(
                     elevation: 6,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),

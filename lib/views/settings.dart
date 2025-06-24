@@ -1,3 +1,5 @@
+// pantalla de configuración del usuario
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Importa Firebase Authentication para gestionar usuarios
 import '../services/auth_service.dart'; // Servicio personalizado para lógica de autenticación
@@ -135,7 +137,6 @@ Future<void> _saveFreelancerDetails() async {
       address: address,
     );
     // Actualiza el nombre en el documento principal del usuario
-    // (puedes agregar un método en FirestoreService si prefieres)
     await FirebaseFirestore.instance
         .collection('users')
         .doc(_currentUser!.uid)
@@ -157,13 +158,13 @@ Future<void> _saveFreelancerDetails() async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, style: const TextStyle(color: whiteColor, fontFamily: 'Roboto')),
-        backgroundColor: isError ? errorRed : primaryGreen, // Color según sea error o éxito
+        backgroundColor: isError ? errorRed : primaryGreen,
         action: actionLabel != null && onActionPressed != null
             ? SnackBarAction(label: actionLabel, onPressed: onActionPressed, textColor: whiteColor)
             : null,
-        behavior: SnackBarBehavior.floating, // Comportamiento flotante
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), // Bordes redondeados
-        margin: const EdgeInsets.all(10), // Margen alrededor del SnackBar
+        behavior: SnackBarBehavior.floating, 
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), 
+        margin: const EdgeInsets.all(10), 
       ),
     );
   }
@@ -180,7 +181,7 @@ Future<void> _saveFreelancerDetails() async {
       ),
       child: Row(
         children: [
-          if (icon != null) ...[ // Muestra el icono si se proporciona
+          if (icon != null) ...[ 
             Icon(icon, color: primaryGreen, size: 24),
             const SizedBox(width: 16),
           ],
@@ -206,22 +207,22 @@ Future<void> _saveFreelancerDetails() async {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        enabled: enabled, // Habilita o deshabilita el campo
+        enabled: enabled, 
         style: const TextStyle(color: darkGrey, fontFamily: 'Roboto'),
         decoration: InputDecoration(
-          labelText: label, // Etiqueta del campo
+          labelText: label, 
           labelStyle: const TextStyle(color: mediumGrey),
-          prefixIcon: icon != null ? Icon(icon, color: primaryGreen, size: 24) : null, // Icono opcional
-          border: OutlineInputBorder( // Estilo del borde por defecto
+          prefixIcon: icon != null ? Icon(icon, color: primaryGreen, size: 24) : null, 
+          border: OutlineInputBorder( 
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: mediumGrey.withOpacity(0.6)),
           ),
-          focusedBorder: OutlineInputBorder( // Estilo del borde cuando enfocado
+          focusedBorder: OutlineInputBorder( 
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: primaryGreen, width: 2),
           ),
           filled: true,
-          fillColor: whiteColor, // Color de fondo del campo
+          fillColor: whiteColor,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
@@ -233,10 +234,10 @@ Future<void> _saveFreelancerDetails() async {
     final freelancer = _freelancerDetails ?? {}; // Asegura que freelancer no sea nulo
 
     return Scaffold(
-      backgroundColor: offWhite, // Color de fondo de la pantalla
+      backgroundColor: offWhite, 
       appBar: AppBar(
         title: const Text(
-          'Configuración', // Título de la AppBar
+          'Configuración',
           style: TextStyle(
               color: darkGrey,
               fontWeight: FontWeight.bold,
@@ -244,15 +245,15 @@ Future<void> _saveFreelancerDetails() async {
               fontFamily: 'Montserrat'),
           overflow: TextOverflow.ellipsis,
         ),
-        automaticallyImplyLeading: false, // No muestra el botón de retroceso automático
+        automaticallyImplyLeading: false, 
         backgroundColor: whiteColor,
-        elevation: 4, // Sombra
+        elevation: 4,
         centerTitle: false,
-        toolbarHeight: 90, // Altura de la barra de herramientas
+        toolbarHeight: 90, 
         surfaceTintColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20), // Bordes inferiores redondeados
+            bottom: Radius.circular(20), 
           ),
         ),
         actions: [
@@ -262,30 +263,30 @@ Future<void> _saveFreelancerDetails() async {
               tooltip: 'Editar perfil',
               onPressed: () {
                 setState(() {
-                  _editing = true; // Cambia a modo edición
+                  _editing = true; 
                 });
               },
             ),
         ],
       ),
-      bottomNavigationBar: const Footer(currentIndex: 4), // Barra de navegación inferior
-      body: ListView( // Permite el desplazamiento de la pantalla
+      bottomNavigationBar: const Footer(currentIndex: 4), 
+      body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           Text('Datos del Usuario', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
           const SizedBox(height: 20),
           if (_editing) ...[ // Muestra campos editables si está en modo edición
-            _editTile('Nombre', _firstNameController, icon: Icons.person_outline, enabled: !_isGoogleLoggedIn), // Nombre (deshabilitado si es Google)
-            _editTile('Apellido', _lastNameController, icon: Icons.person_outline, enabled: !_isGoogleLoggedIn), // Apellido (deshabilitado si es Google)
-            _editTile('Correo electrónico', _emailController, icon: Icons.mail_outline, enabled: !_isGoogleLoggedIn), // Email (deshabilitado si es Google)
-            _editTile('Teléfono *', _phoneController, icon: Icons.phone_outlined, keyboardType: TextInputType.phone, enabled: true), // Teléfono (siempre editable)
-            _editTile('Dirección', _addressController, icon: Icons.location_on_outlined, enabled: true), // Dirección (siempre editable)
+            _editTile('Nombre', _firstNameController, icon: Icons.person_outline, enabled: !_isGoogleLoggedIn), 
+            _editTile('Apellido', _lastNameController, icon: Icons.person_outline, enabled: !_isGoogleLoggedIn), 
+            _editTile('Correo electrónico', _emailController, icon: Icons.mail_outline, enabled: !_isGoogleLoggedIn),
+            _editTile('Teléfono *', _phoneController, icon: Icons.phone_outlined, keyboardType: TextInputType.phone, enabled: true), 
+            _editTile('Dirección', _addressController, icon: Icons.location_on_outlined, enabled: true),
             const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _saving ? null : _saveFreelancerDetails, // Botón Guardar (deshabilitado si está guardando)
+                    onPressed: _saving ? null : _saveFreelancerDetails, 
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryGreen,
                       padding: const EdgeInsets.symmetric(vertical: 18),
@@ -308,7 +309,7 @@ Future<void> _saveFreelancerDetails() async {
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: whiteColor), // Indicador de carga
+                            child: CircularProgressIndicator(strokeWidth: 2, color: whiteColor), 
                           )
                         : const Text('Guardar', style: TextStyle(color: whiteColor, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
                   ),
@@ -316,11 +317,11 @@ Future<void> _saveFreelancerDetails() async {
                 const SizedBox(width: 16),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _saving // Botón Cancelar (deshabilitado si está guardando)
+                    onPressed: _saving 
                         ? null
                         : () {
                             setState(() {
-                              _editing = false; // Sale del modo edición
+                              _editing = false; 
                               // Restaura los valores originales de los controladores
                               _firstNameController.text = freelancer['firstName'] ?? '';
                               _lastNameController.text = freelancer['lastName'] ?? '';
@@ -343,7 +344,7 @@ Future<void> _saveFreelancerDetails() async {
                 ),
               ],
             ),
-          ] else ...[ // Muestra información estática si no está en modo edición
+          ] else ...[ 
             _infoTile('Nombre', freelancer['firstName'] ?? '', icon: Icons.person_outline),
             _infoTile('Apellido', freelancer['lastName'] ?? '', icon: Icons.person_outline),
             _infoTile('Correo electrónico', freelancer['email'] ?? '', icon: Icons.mail_outline),
@@ -355,7 +356,6 @@ Future<void> _saveFreelancerDetails() async {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () async {
-                // Muestra un diálogo de confirmación antes de cerrar sesión.
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
@@ -366,7 +366,7 @@ Future<void> _saveFreelancerDetails() async {
                     content: const Text('¿Estás seguro que deseas cerrar sesión?', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.of(context).pop(false), // Botón Cancelar
+                        onPressed: () => Navigator.of(context).pop(false),
                         child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold)),
                       ),
                       ElevatedButton(
@@ -377,7 +377,7 @@ Future<void> _saveFreelancerDetails() async {
                           ),
                           elevation: 5,
                         ),
-                        onPressed: () => Navigator.of(context).pop(true), // Botón Cerrar Sesión
+                        onPressed: () => Navigator.of(context).pop(true), 
                         child: const Text('Cerrar Sesión', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)),
                       ),
                     ],
@@ -385,14 +385,14 @@ Future<void> _saveFreelancerDetails() async {
                   ),
                 );
                 if (confirm == true) {
-                  await AuthService().logout(); // Llama al servicio de autenticación para cerrar sesión
-                  if (context.mounted) { // Asegura que el widget esté montado antes de navegar
-                    Navigator.pushReplacementNamed(context, '/bienvenida'); // Redirige a la pantalla de bienvenida
+                  await AuthService().logout();
+                  if (context.mounted) {
+                    Navigator.pushReplacementNamed(context, '/bienvenida');
                   }
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: errorRed, // Color de fondo del botón de cerrar sesión
+                backgroundColor: errorRed, 
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
@@ -409,7 +409,7 @@ Future<void> _saveFreelancerDetails() async {
                   },
                 ),
               ),
-              icon: const Icon(Icons.logout, color: whiteColor, size: 28), // Icono de cerrar sesión
+              icon: const Icon(Icons.logout, color: whiteColor, size: 28), 
               label: const Text(
                 'Cerrar Sesión',
                 style: TextStyle(fontSize: 19, color: whiteColor, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),

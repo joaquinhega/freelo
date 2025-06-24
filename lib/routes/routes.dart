@@ -25,14 +25,14 @@ class Routes{
   static const String calendar = '/calendar';
   static const String clientes = '/clientes';
   static const String estadisticas = '/estadisticas';
-  static const String facturacion = '/facturacion'; // Ruta para facturar proyecto
+  static const String facturacion = '/facturacion'; 
   static const String new_client = '/nuevo-cliente';
   static const String Settings = '/settings';
   static const String tareas = '/tareas';
   static const String bienvenida = '/bienvenida';
   static const String details_project = '/details_project';
   static const String edit_project = '/edit_project';
-  static const String invoices = '/invoices'; // Nueva ruta para ver facturas
+  static const String invoices = '/invoices'; 
 
   Route<dynamic> generateRoute(RouteSettings settings) {
     //Switch con las rutas que se van a utilizar
@@ -72,7 +72,7 @@ class Routes{
           builder: (_) => EditProjectWidget(initialData: args['initialData'] ?? {}),
           settings: settings,
         );
-      case invoices: // Agrega la nueva ruta para las facturas
+      case invoices: 
         return MaterialPageRoute(builder: (_) => const FacturasScreen(), settings: settings);
       default:
         return MaterialPageRoute(builder: (_) => const Login(), settings: settings);

@@ -1,10 +1,11 @@
+// Pantalla de login con email/contraseña y Google Sign-In
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:myapp/services/firestore_service.dart';
 import '../routes/routes.dart';
 import '../services/auth_service.dart';
 
-// Pantalla de login con email/contraseña y Google Sign-In
 class Login extends StatefulWidget {
   const Login({super.key});
 
@@ -18,7 +19,8 @@ class LoginState extends State<Login> {
   bool _loading = false;
 
   @override
-  void dispose() {
+  // Método para inicializar el estado
+  void dispose() { 
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();

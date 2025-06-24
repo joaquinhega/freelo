@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/firestore_service.dart';
-import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Importa el paquete de Firestore
+import '../services/firestore_service.dart'; // Importa el servicio Firestore, la diferencia entre el paquete y el servicio es que el paquete es de Firebase y el servicio es tu implementación personalizada
+import 'package:intl/intl.dart'; // Permite formatear fechas
 
 class FacturasScreen extends StatefulWidget {
   const FacturasScreen({super.key});

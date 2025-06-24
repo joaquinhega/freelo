@@ -414,7 +414,7 @@ class FirestoreService {
     };
     }
 
-  //-------------FACTURACIÓN---------------
+  //---------------------FACTURACIÓN----------------------------
   /// Añadir una factura
   Future<void> addInvoice({
     required String projectId,
@@ -431,7 +431,6 @@ class FirestoreService {
     final data = {
       'projectId': projectId,
       'projectName': projectName,
-      // Store 'amount' as 'precio' for consistency
       'precio': amount, 
       'emissionDate': Timestamp.fromDate(emissionDate),
       'dueDate': Timestamp.fromDate(dueDate),
@@ -483,7 +482,7 @@ class FirestoreService {
     required DateTime emissionDate,
     required DateTime dueDate,
     required String descripcionServicio,
-    required double amount, // This will be stored as 'precio'
+    required double amount, 
     required String notasCondiciones,
     String? projectId,
     required String projectName,
@@ -499,7 +498,7 @@ class FirestoreService {
       'emissionDate': emissionDate,
       'dueDate': dueDate,
       'descripcionServicio': descripcionServicio,
-      'precio': amount, // Store the amount under the 'precio' field
+      'precio': amount, 
       'notasCondiciones': notasCondiciones,
       'timestamp': FieldValue.serverTimestamp(),
       'projectId': projectId,
@@ -512,7 +511,7 @@ class FirestoreService {
         .add(data);
   }
 
-///------------INGRESOS---------------
+///--------------------------INGRESOS-------------------------
    /// Ingresos totales por proyecto
   Future<Map<String, double>> getIngresosPorProyecto() async {
     final user = _auth.currentUser;
@@ -529,7 +528,6 @@ class FirestoreService {
     for (var doc in snapshot.docs) {
       final data = doc.data();
       final projectName = data['projectName'] as String? ?? 'Desconocido';
-      // Prioritize 'precio' field
       final dynamic precio = data['precio'] ?? data['amount']; 
       double monto = 0.0;
 
@@ -557,7 +555,6 @@ class FirestoreService {
     double total = 0.0;
     for (var doc in snapshot.docs) {
       final data = doc.data();
-      // Prioritize 'precio' field
       final dynamic precio = data['precio'] ?? data['amount']; 
       if (precio is int) total += precio.toDouble();
       else if (precio is double) total += precio;
@@ -639,7 +636,6 @@ class FirestoreService {
       }
       if (fecha == null) continue;
       final mes = fecha.month - 1;
-      // Prioritize 'precio' field
       final dynamic precio = data['precio'] ?? data['amount'];
       double monto = 0.0;
       if (precio is int) monto = precio.toDouble();

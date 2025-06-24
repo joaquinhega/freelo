@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Importa Firestore para manejar la base de datos.
 import 'package:myapp/views/detailsProject.dart';
 import 'package:myapp/views/new_client.dart';
 import '../services/firestore_service.dart';
@@ -17,7 +17,6 @@ class _ClientesScreenState extends State<ClientesScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   late Stream<QuerySnapshot> projectsStream; // Stream para escuchar cambios en los proyectos.
 
-  // Definición de colores constantes para la UI.
   static const Color primaryGreen = Color(0xFF2E7D32);
   static const Color lightGreen = Color(0xFFE8F5E9);
   static const Color whiteColor = Colors.white;
@@ -39,7 +38,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
       backgroundColor: offWhite,
       appBar: AppBar(
         title: const Text(
-          'Proyectos', // Título de la AppBar.
+          'Proyectos', 
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 28,
@@ -59,17 +58,16 @@ class _ClientesScreenState extends State<ClientesScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.receipt_long, color: primaryGreen), // Icono de factura
+            icon: const Icon(Icons.receipt_long, color: primaryGreen), 
             onPressed: () {
               Navigator.pushNamed(context, Routes.invoices);
             },
           ),
         ],
       ),
-      bottomNavigationBar: const Footer(currentIndex: 2), // Barra de navegación inferior.
+      bottomNavigationBar: const Footer(currentIndex: 2),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Navega a la pantalla para crear un nuevo cliente/proyecto.
           Navigator.push(context,
               MaterialPageRoute(builder: (context) => const NewClientScreen()));
         },
@@ -85,19 +83,17 @@ class _ClientesScreenState extends State<ClientesScreen> {
         child: const Icon(Icons.add, size: 30),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: projectsStream, // Escucha los cambios en la colección de proyectos.
+        stream: projectsStream,
         builder: (context, snapshot) {
           // Muestra un indicador de carga mientras se obtienen los datos.
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: primaryGreen));
           }
-          // Muestra un mensaje de error si la carga falla.
           if (snapshot.hasError) {
             return Center(
                 child: Text('Error al cargar proyectos: ${snapshot.error}',
                     style: TextStyle(color: errorRed, fontSize: 18, fontFamily: 'Roboto')));
           }
-          // Muestra un mensaje si no hay proyectos.
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(
                 child: Text('No hay proyectos aún.',

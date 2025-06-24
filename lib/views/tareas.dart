@@ -1,6 +1,7 @@
+// pantalla que muestra tareas pendientes y completadas, permite crear nuevas tareas y ver detalles de cada tarea.
+
 import 'package:flutter/material.dart'; // Importa la biblioteca fundamental de Flutter para construir interfaces de usuario.
 import 'package:cloud_firestore/cloud_firestore.dart'; // Importa Cloud Firestore, la base de datos NoSQL de Firebase.
-import 'package:firebase_auth/firebase_auth.dart'; // Importa Firebase Auth para autenticación de usuarios.
 import '../services/firestore_service.dart'; // Importa un servicio personalizado para interactuar con Firestore.
 import 'widgets/new_tarea.dart'; // Importa el widget para crear nuevas tareas.
 import 'widgets/details_task.dart'; // Importa el widget para mostrar los detalles de una tarea.
@@ -468,7 +469,7 @@ void initState() {
           showDialog(
             context: context,
             builder: (BuildContext context) {
-              return const NewTaskScreen(); // Abre el diálogo para crear una nueva tarea.
+              return const NewTaskScreen(); // Abre el modal para crear una nueva tarea.
             },
           );
         },

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart'; //Comprueba la autenticación de Firebase del usuario
 import 'package:intl/intl.dart';
 import '../services/pdf_generator_service.dart';
-import '../services/firestore_service.dart'; // Importa el servicio centralizado
+import '../services/firestore_service.dart'; // Importa el servicio centralizado para Firestore
 import 'package:open_filex/open_filex.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb; // Comprueba si la aplicación se está ejecutando en la web o en mobile
 
 class FacturacionScreen extends StatefulWidget {
   const FacturacionScreen({super.key});
@@ -27,7 +27,7 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
   final TextEditingController _telefonoClienteController = TextEditingController();
 
   final PdfGeneratorService _pdfGeneratorService = PdfGeneratorService();
-  final FirestoreService _firestoreService = FirestoreService(); // Instancia centralizada
+  final FirestoreService _firestoreService = FirestoreService(); 
 
   static const Color primaryGreen = Color(0xFF2E7D32);
   static const Color whiteColor = Colors.white;
@@ -48,7 +48,7 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
   String? _projectId;
 
   @override
-  void didChangeDependencies() {
+  void didChangeDependencies() { // Método que se llama cuando las dependencias cambian (por ejemplo, cambia de Modal a Navigator)
     super.didChangeDependencies();
     if (!_initialized) {
       final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -69,8 +69,7 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
       _initialized = true;
     }
   }
-
-  // --- LIMPIO: Carga datos de un proyecto y cliente usando FirestoreService ---
+  // Inicializa los campos del formulario y carga los detalles del freelancer y del proyecto si están disponibles.
   Future<void> _loadProjectAndClientData(String projectId) async {
     final data = await _firestoreService.getProjectById(projectId);
     if (data != null) {
@@ -86,7 +85,7 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
     }
   }
 
-  // --- LIMPIO: Carga detalles del freelancer usando FirestoreService ---
+  // Carga los detalles del freelancer desde Firestore y los almacena en el estado.
   void _loadFreelancerDetails() async {
     final details = await _firestoreService.getFreelancerDetails();
     if (details != null) {
@@ -111,8 +110,9 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
     super.dispose();
   }
 
-  // --- LIMPIO: Genera y guarda la factura usando FirestoreService ---
+  // genera la factura y la guarda en Firestore y como PDF.
   void _generarFactura() async {
+    // Comprueba si el formulario es válido antes de proceder
     if (_formKey.currentState!.validate()) {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
@@ -199,7 +199,7 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
         _showSnackBar('Error al generar o guardar el PDF: $e', isError: true);
       }
 
-      Future.delayed(const Duration(milliseconds: 1500), () {
+      Future.delayed(const Duration(milliseconds: 1500), () { 
         if (mounted) {
           Navigator.of(context).pop();
         }
@@ -207,6 +207,7 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
     }
   }
 
+  // Muestra una barra con un mensaje personalizado.
   void _showSnackBar(String message, {bool isError = false, bool isInfo = false, String? actionLabel, VoidCallback? onActionPressed}) {
     Color backgroundColor = isError ? errorRed : (isInfo ? accentBlue : primaryGreen);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -251,33 +252,33 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
         onTap: onTap,
         style: const TextStyle(color: darkGrey, fontFamily: 'Roboto'),
         decoration: InputDecoration(
-          hintText: hintText, // Texto de sugerencia
+          hintText: hintText,
           hintStyle: TextStyle(color: mediumGrey.withOpacity(0.7)),
           filled: true,
-          fillColor: whiteColor, // Color de fondo del campo
+          fillColor: whiteColor, 
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: OutlineInputBorder( // Estilo del borde por defecto
+          border: OutlineInputBorder( 
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: mediumGrey.withOpacity(0.4), width: 1.5),
           ),
-          enabledBorder: OutlineInputBorder( // Estilo del borde cuando habilitado
+          enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: mediumGrey.withOpacity(0.4), width: 1.5),
           ),
-          focusedBorder: OutlineInputBorder( // Estilo del borde cuando está enfocado
+          focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: primaryGreen, width: 2.0),
           ),
-          errorBorder: OutlineInputBorder( // Estilo del borde en caso de error
+          errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: errorRed, width: 2.0),
           ),
-          focusedErrorBorder: OutlineInputBorder( // Estilo del borde en error y enfocado
+          focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: errorRed, width: 2.0),
           ),
         ),
-        validator: validator, // Función de validación
+        validator: validator, 
       ),
     );
   }
@@ -285,34 +286,34 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: offWhite, // Color de fondo de la pantalla
+      backgroundColor: offWhite, 
       appBar: AppBar(
-        leading: BackButton(color: darkGrey), // Botón de retroceso
+        leading: BackButton(color: darkGrey), 
         title: const Text(
-          'Facturar', // Título de la AppBar
+          'Facturar',
           style: TextStyle(
               color: darkGrey,
               fontWeight: FontWeight.bold,
               fontSize: 28,
               fontFamily: 'Montserrat'),
-          overflow: TextOverflow.ellipsis, // Manejo de texto largo
+          overflow: TextOverflow.ellipsis, 
         ),
-        backgroundColor: whiteColor, // Color de fondo de la AppBar
+        backgroundColor: whiteColor,
         elevation: 4, // Sombra
         centerTitle: false,
-        toolbarHeight: 90, // Altura de la barra de herramientas
-        surfaceTintColor: Colors.transparent, // Color de la superficie
+        toolbarHeight: 90, 
+        surfaceTintColor: Colors.transparent, 
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20), // Borde inferior redondeado
+            bottom: Radius.circular(20),
           ),
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20), // Padding para el contenido del cuerpo
+        padding: const EdgeInsets.all(20), 
         child: Form(
-          key: _formKey, // Asigna la clave al formulario
-          child: ListView( // Permite el scroll de los campos del formulario
+          key: _formKey, 
+          child: ListView(
             children: [
               _buildSectionTitle('Número de Factura'),
               _buildTextFormField(
@@ -325,53 +326,52 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
               _buildTextFormField(
                 _clienteController,
                 'Nombre y Apellido del Cliente',
-                (value) => // Validador de campo requerido
+                (value) => 
                     value == null || value.isEmpty ? 'Ingrese el nombre del cliente' : null,
               ),
               _buildTextFormField(
                 _empresaController,
                 'Empresa del Cliente (Opcional)',
-                null, // Campo opcional, sin validador
+                null, 
               ),
               _buildTextFormField(
                 _emailController,
                 'Email del Cliente',
-                (value) => // Validador de campo requerido
+                (value) => 
                     value == null || value.isEmpty ? 'Ingrese el email del cliente' : null,
-                keyboardType: TextInputType.emailAddress, // Teclado para email
+                keyboardType: TextInputType.emailAddress, 
               ),
               _buildTextFormField(
                 _telefonoClienteController,
                 'Teléfono del Cliente (Opcional)',
                 null, // Campo opcional
-                keyboardType: TextInputType.phone, // Teclado para teléfono
+                keyboardType: TextInputType.phone, 
               ),
               _buildSectionTitle('Fechas de la Factura'),
               _buildTextFormField(
                 _fechaController,
                 'DD/MM/YYYY',
-                (value) => // Validador de campo requerido
+                (value) => 
                     value == null || value.isEmpty ? 'Ingrese la fecha de facturación' : null,
-                readOnly: true, // Solo lectura, para seleccionar con date picker
-                onTap: () async { // Abre el selector de fecha al tocar
-                  FocusScope.of(context).requestFocus(FocusNode()); // Quita el foco del teclado
+                readOnly: true,
+                onTap: () async { 
+                  FocusScope.of(context).requestFocus(FocusNode());
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
                     firstDate: DateTime(2020),
                     lastDate: DateTime(2100),
                     builder: (context, child) {
-                      // Tema personalizado para el date picker
                       return Theme(
                         data: ThemeData.light().copyWith(
                           colorScheme: const ColorScheme.light(
-                            primary: primaryGreen, // Color principal
-                            onPrimary: whiteColor, // Color del texto sobre el principal
-                            onSurface: darkGrey, // Color del texto en la superficie
+                            primary: primaryGreen, 
+                            onPrimary: whiteColor,
+                            onSurface: darkGrey,
                           ),
                           textButtonTheme: TextButtonThemeData(
                             style: TextButton.styleFrom(
-                              foregroundColor: primaryGreen, // Color de texto de los botones
+                              foregroundColor: primaryGreen,
                             ),
                           ),
                         ),
@@ -380,21 +380,21 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                     },
                   );
                   if (picked != null) {
-                    _fechaController.text = DateFormat('dd/MM/yyyy').format(picked); // Actualiza campo con fecha seleccionada
+                    _fechaController.text = DateFormat('dd/MM/yyyy').format(picked); 
                   }
                 },
               ),
               _buildTextFormField(
                 _fechaVencimientoController,
                 'DD/MM/YYYY',
-                (value) => // Validador de campo requerido
+                (value) => 
                     value == null || value.isEmpty ? 'Ingrese la fecha de vencimiento' : null,
-                readOnly: true, // Solo lectura
-                onTap: () async { // Abre selector de fecha
+                readOnly: true,
+                onTap: () async { 
                   FocusScope.of(context).requestFocus(FocusNode());
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: DateTime.now().add(const Duration(days: 30)), // Fecha inicial a 30 días
+                    initialDate: DateTime.now().add(const Duration(days: 30)),
                     firstDate: DateTime(2020),
                     lastDate: DateTime(2100),
                     builder: (context, child) {
@@ -424,15 +424,15 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
               _buildTextFormField(
                 _descripcionController,
                 'Descripción detallada de la factura',
-                (value) => // Validador de campo requerido
+                (value) =>
                     value == null || value.isEmpty ? 'Ingrese la descripción' : null,
-                maxLines: 3, // Permite múltiples líneas
+                maxLines: 3,
               ),
               _buildSectionTitle('Precio'),
               _buildTextFormField(
                 _precioController,
                 'Ej: 250.00',
-                (value) { // Validador de precio
+                (value) { 
                   if (value == null || value.isEmpty) {
                     return 'Ingrese el precio';
                   }
@@ -441,25 +441,25 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                   }
                   return null;
                 },
-                keyboardType: TextInputType.number, // Teclado numérico
+                keyboardType: TextInputType.number, 
               ),
               _buildSectionTitle('Notas / Condiciones Adicionales (Opcional)'),
               _buildTextFormField(
                 _notasCondicionesController,
                 'Ej: Condiciones de pago, detalles bancarios, etc.',
-                null, // Campo opcional
-                maxLines: 3, // Permite múltiples líneas
+                null,
+                maxLines: 3, 
               ),
               const SizedBox(height: 30),
               SizedBox(
-                width: double.infinity, // Ancho completo del botón
+                width: double.infinity, 
                 child: ElevatedButton.icon(
-                  onPressed: _generarFactura, // Llama a la función para generar factura
+                  onPressed: _generarFactura,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryGreen, // Color de fondo del botón
+                    backgroundColor: primaryGreen, 
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15), // Borde redondeado del botón
+                      borderRadius: BorderRadius.circular(15),
                     ),
                     elevation: 10, // Sombra del botón
                     shadowColor: primaryGreen.withOpacity(0.5),
@@ -467,15 +467,15 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
                     overlayColor: MaterialStateProperty.resolveWith<Color>(
                       (Set<MaterialState> states) {
                         if (states.contains(MaterialState.pressed)) {
-                          return whiteColor.withOpacity(0.3); // Efecto al presionar
+                          return whiteColor.withOpacity(0.3); 
                         }
                         return primaryGreen;
                       },
                     ),
                   ),
-                  icon: const Icon(Icons.picture_as_pdf, color: whiteColor, size: 28), // Icono de PDF
+                  icon: const Icon(Icons.picture_as_pdf, color: whiteColor, size: 28), 
                   label: const Text(
-                    'Generar y Guardar Factura', // Texto del botón
+                    'Generar y Guardar Factura', 
                     style: TextStyle(fontSize: 19, color: whiteColor, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
                   ),
                 ),
