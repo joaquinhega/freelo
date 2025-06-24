@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart'; // Autenticación de Firebase.
 import 'package:flutter/material.dart'; // Widgets de Flutter para UI.
 import 'package:cloud_firestore/cloud_firestore.dart'; // Base de datos Firestore.
+import 'package:flutter/gestures.dart'; // Para PointerScrollEvent.
 import '../services/firestore_service.dart'; // Servicio para operaciones con Firestore.
 import '../routes/routes.dart'; // Definición de rutas de navegación.
 import 'widgets/details_task.dart'; // Widget para detalles de una tarea.
@@ -40,30 +41,22 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
   static const Color darkGrey = Color(0xFF212121);
   static const Color mediumGrey = Color(0xFF616161);
   static const Color errorRed = Color(0xFFD32F2F);
-  static const Color completedOrange = Color(0xFFF57C00);
+  static const Color completedOrange = Color(0xFFFFA726);
 
   @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(viewportFraction: 0.85); // Inicializa el controlador del PageView.
+void initState() {
+  super.initState();
+  _pageController = PageController(viewportFraction: 0.85);
 
-    _projectData = Map<String, dynamic>.from(widget.projectData); // Copia los datos del proyecto.
-    _projectId = widget.projectId; // Asigna el ID del proyecto.
+  _projectData = Map<String, dynamic>.from(widget.projectData);
+  _projectId = widget.projectId;
 
-    final user = FirebaseAuth.instance.currentUser; // Obtiene el usuario actual.
-    if (user != null) {
-      // Configura el stream para obtener tareas no completadas del proyecto del usuario.
-      _tasksStream = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('userTasks')
-          .where('projectId', isEqualTo: widget.projectId)
-          .where('isCompleted', isEqualTo: false)
-          .snapshots();
-    } else {
-      _tasksStream = const Stream.empty(); // Stream vacío si no hay usuario.
-    }
-  }
+  // Usa el servicio centralizado para obtener el stream de tareas pendientes del proyecto
+  _tasksStream = _firestoreService.getTasksByProjectStream(
+    projectId: widget.projectId,
+    isCompleted: false,
+  );
+}
 
   @override
   void dispose() {
@@ -107,7 +100,17 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
         content: const Text('¿Estás seguro que deseas eliminar este proyecto? Esta acción no se puede deshacer.', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
         actions: [
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold))),
-          ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: errorRed, 
+              foregroundColor: whiteColor, 
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            ),
+            child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)), 
+          ),
         ],
         elevation: 10,
       ),
@@ -242,143 +245,155 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                     const SizedBox(height: 30),
                     const Text('FASES DEL PROYECTO', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
                     const SizedBox(height: 20),
-                    SizedBox(
-                      height: 240,
-                      child: PageView.builder( // Paginador para las fases.
-                        controller: _pageController,
-                        itemCount: phases.length + 1, // +1 para el botón de "Nueva fase".
-                        onPageChanged: (int page) {
-                          setState(() => _currentPage = page); // Actualiza el indicador de página.
-                        },
-                        itemBuilder: (context, index) {
-                          if (index < phases.length) {
-                            final phase = phases[index];
-                            return GestureDetector(
-                              onTap: () {
-                                // Navega a la pantalla de detalles de la fase.
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => DetailsPhaseScreen(phaseData: phase, projectId: _projectId, phaseId: phase['id'] ?? '',)));
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 10.0),
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(colors: [lightGreen, whiteColor], begin: Alignment.topLeft, end: Alignment.bottomRight,), // Degradado.
-                                  borderRadius: BorderRadius.circular(18),
-                                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), spreadRadius: 2, blurRadius: 8, offset: const Offset(0, 4),)], // Sombra.
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('${index + 1}. ${phase['title'] ?? 'Fase sin título'}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
-                                    const SizedBox(height: 12),
-                                    const Text('Próximas tareas:', style: TextStyle(fontWeight: FontWeight.bold, color: primaryGreen, fontSize: 16, fontFamily: 'Roboto')),
-                                    const SizedBox(height: 8),
-                                    Expanded(
-                                      child: StreamBuilder<QuerySnapshot>( // Muestra tareas pendientes de esta fase.
-                                        stream: FirebaseFirestore.instance
-                                            .collection('users').doc(FirebaseAuth.instance.currentUser!.uid)
-                                            .collection('userTasks')
-                                            .where('projectId', isEqualTo: _projectId)
-                                            .where('phase', isEqualTo: phase['title'])
-                                            .where('isCompleted', isEqualTo: false)
-                                            .snapshots(),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.connectionState == ConnectionState.waiting) {
-                                            return const Center(child: CircularProgressIndicator(strokeWidth: 2, color: primaryGreen));
-                                          }
-                                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                                            return const Text('Sin tareas activas', style: TextStyle(color: mediumGrey, fontSize: 14, fontStyle: FontStyle.italic));
-                                          }
-                                          final phaseTasks = snapshot.data!.docs;
-                                          return ListView.builder(
-                                            shrinkWrap: true,
-                                            physics: const NeverScrollableScrollPhysics(),
-                                            itemCount: phaseTasks.length,
-                                            itemBuilder: (context, idx) {
-                                              return Padding(
-                                                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                                                child: Text('• ${(phaseTasks[idx].data() as Map<String, dynamic>)['title'] ?? ''}', style: const TextStyle(fontSize: 15, color: darkGrey, fontFamily: 'Roboto')),
-                                              );
-                                            },
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          } else {
-                            // Botón para agregar una nueva fase.
-                            return GestureDetector(
-                              onTap: () async {
-                                final result = await showDialog<Map<String, String>>(
-                                  context: context,
-                                  builder: (context) {
-                                    final TextEditingController titleController = TextEditingController();
-                                    final TextEditingController descController = TextEditingController();
-                                    return AlertDialog( // Diálogo para añadir nueva fase.
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                      title: const Text('Nueva fase', style: TextStyle(fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
-                                      content: SingleChildScrollView(
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))), labelStyle: TextStyle(color: mediumGrey)), style: const TextStyle(color: darkGrey, fontFamily: 'Roboto')),
-                                            const SizedBox(height: 12),
-                                            TextField(controller: descController, decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))), labelStyle: TextStyle(color: mediumGrey)), style: const TextStyle(color: darkGrey, fontFamily: 'Roboto'), maxLines: 2,),
-                                          ],
-                                        ),
-                                      ),
-                                      actions: [
-                                        TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold))),
-                                        ElevatedButton(onPressed: () {
-                                            if (titleController.text.trim().isEmpty) return; // Validación básica.
-                                            Navigator.pop(context, {'title': titleController.text.trim(), 'description': descController.text.trim(),});
-                                          },
-                                          style: ElevatedButton.styleFrom(backgroundColor: primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 5,),
-                                          child: const Text('Agregar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)),
-                                        ),
-                                      ],
-                                      elevation: 10,
-                                    );
-                                  },
-                                );
-                                if (result != null && result['title'] != null && result['title']!.isNotEmpty) {
-                                  final user = FirebaseAuth.instance.currentUser;
-                                  if (user != null) {
-                                    final projectRef = FirebaseFirestore.instance.collection('users').doc(user.uid).collection('projects').doc(_projectId);
-                                    await projectRef.update({
-                                      'phases': FieldValue.arrayUnion([ // Añade la nueva fase al array en Firestore.
-                                        {'id': DateTime.now().millisecondsSinceEpoch.toString(), 'title': result['title'], 'description': result['description'], 'date': 'N/A',}
-                                      ])
-                                    });
-                                  }
-                                }
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 10.0),
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: lightGreen.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(color: primaryGreen, width: 2),
-                                  boxShadow: [BoxShadow(color: primaryGreen.withOpacity(0.2), spreadRadius: 1, blurRadius: 5, offset: const Offset(0, 3),)],
-                                ),
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(Icons.add_circle_outline, color: primaryGreen, size: 45), // Icono de añadir.
-                                      SizedBox(height: 15),
-                                      Text('Nueva fase', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Montserrat'),),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Listener(
+                        onPointerSignal: (pointerSignal) {
+                          if (pointerSignal is PointerScrollEvent) {
+                            if (pointerSignal.scrollDelta.dy > 0) {
+                              _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.ease);
+                            } else if (pointerSignal.scrollDelta.dy < 0) {
+                              _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.ease);
+                            }
                           }
                         },
+                        child: SizedBox(
+                          height: 240,
+                          child: PageView.builder(
+                            controller: _pageController,
+                            itemCount: phases.length + 1, // +1 para el botón de "Nueva fase".
+                            onPageChanged: (int page) {
+                              setState(() => _currentPage = page); // Actualiza el indicador de página.
+                            },
+                            itemBuilder: (context, index) {
+                              if (index < phases.length) {
+                                final phase = phases[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    // Navega a la pantalla de detalles de la fase.
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => DetailsPhaseScreen(phaseData: phase, projectId: _projectId, phaseId: phase['id'] ?? '',)));
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 10.0),
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(colors: [lightGreen, whiteColor], begin: Alignment.topLeft, end: Alignment.bottomRight,), // Degradado.
+                                      borderRadius: BorderRadius.circular(18),
+                                      boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), spreadRadius: 2, blurRadius: 8, offset: const Offset(0, 4),)], // Sombra.
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('${index + 1}. ${phase['title'] ?? 'Fase sin título'}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
+                                        const SizedBox(height: 12),
+                                        const Text('Próximas tareas:', style: TextStyle(fontWeight: FontWeight.bold, color: primaryGreen, fontSize: 16, fontFamily: 'Roboto')),
+                                        const SizedBox(height: 8),
+                                        Expanded(
+                                          child: StreamBuilder<QuerySnapshot>(
+                                            stream: _firestoreService.getTasksByPhaseStream(
+                                              projectId: _projectId,
+                                              phaseTitle: phase['title'] ?? '',
+                                              isCompleted: false,
+                                            ),
+                                            builder: (context, snapshot) {
+                                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                                return const Center(child: CircularProgressIndicator(strokeWidth: 2, color: primaryGreen));
+                                              }
+                                              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                                                return const Text('Sin tareas activas', style: TextStyle(color: mediumGrey, fontSize: 14, fontStyle: FontStyle.italic));
+                                              }
+                                              final phaseTasks = snapshot.data!.docs;
+                                              return ListView.builder(
+                                                shrinkWrap: true,
+                                                physics: const NeverScrollableScrollPhysics(),
+                                                itemCount: phaseTasks.length,
+                                                itemBuilder: (context, idx) {
+                                                  return Padding(
+                                                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                                                    child: Text('• ${(phaseTasks[idx].data() as Map<String, dynamic>)['title'] ?? ''}', style: const TextStyle(fontSize: 15, color: darkGrey, fontFamily: 'Roboto')),
+                                                  );
+                                                },
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                // Botón para agregar una nueva fase.
+                                return GestureDetector(
+                                  onTap: () async {
+                                    final result = await showDialog<Map<String, String>>(
+                                      context: context,
+                                      builder: (context) {
+                                        final TextEditingController titleController = TextEditingController();
+                                        final TextEditingController descController = TextEditingController();
+                                        return AlertDialog( // Diálogo para añadir nueva fase.
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                          title: const Text('Nueva fase', style: TextStyle(fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
+                                          content: SingleChildScrollView(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))), labelStyle: TextStyle(color: mediumGrey)), style: const TextStyle(color: darkGrey, fontFamily: 'Roboto')),
+                                                const SizedBox(height: 12),
+                                                TextField(controller: descController, decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))), labelStyle: TextStyle(color: mediumGrey)), style: const TextStyle(color: darkGrey, fontFamily: 'Roboto'), maxLines: 2,),
+                                              ],
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold))),
+                                            ElevatedButton(onPressed: () {
+                                                if (titleController.text.trim().isEmpty) return; 
+                                                Navigator.pop(context, {'title': titleController.text.trim(), 'description': descController.text.trim(),});
+                                              },
+                                              style: ElevatedButton.styleFrom(backgroundColor: primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 5,),
+                                              child: const Text('Agregar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)),
+                                            ),
+                                          ],
+                                          elevation: 10,
+                                        );
+                                      },
+                                    );
+                                    if (result != null && result['title'] != null && result['title']!.isNotEmpty) {
+                                      final user = FirebaseAuth.instance.currentUser;
+                                      if (user != null) {
+                                        final projectRef = FirebaseFirestore.instance.collection('users').doc(user.uid).collection('projects').doc(_projectId);
+                                        await projectRef.update({
+                                          'phases': FieldValue.arrayUnion([ // Añade la nueva fase al array en Firestore.
+                                            {'id': DateTime.now().millisecondsSinceEpoch.toString(), 'title': result['title'], 'description': result['description'], 'date': 'N/A',}
+                                          ])
+                                        });
+                                      }
+                                    }
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 10.0),
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: lightGreen.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(color: primaryGreen, width: 2),
+                                      boxShadow: [BoxShadow(color: primaryGreen.withOpacity(0.2), spreadRadius: 1, blurRadius: 5, offset: const Offset(0, 3),)],
+                                    ),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: const [
+                                          Icon(Icons.add_circle_outline, color: primaryGreen, size: 45), // Icono de añadir.
+                                          SizedBox(height: 15),
+                                          Text('Nueva fase', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Montserrat'),),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -462,12 +477,33 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                                               context: context,
                                               builder: (context) => AlertDialog(
                                                 title: const Text('Eliminar tarea', style: TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
-                                                content: const Text('¿Estás seguro de que deseas eliminar esta tarea?',
-                                                ), // Fin del contenido.
+                                                content: const Text('¿Estás seguro de que deseas eliminar esta tarea?'),
+                                                actions: [
+                                                    TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold))),
+                                                    ElevatedButton(
+                                                      onPressed: () => Navigator.pop(context, true),
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: errorRed, 
+                                                        foregroundColor: whiteColor, 
+                                                        elevation: 0,
+                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                                      ),
+                                                      child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)), 
+                                                    ),
+                                                  ],
                                               )
                                             );
+                                            if (confirm == true) await _firestoreService.deleteTask(taskId);
                                           }
-                                        )
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.check_circle_outline, color: primaryGreen, size: 26),
+                                          tooltip: 'Completar tarea',
+                                          onPressed: () async {
+                                            await _firestoreService.toggleTaskCompleted(taskId, true);
+                                          },
+                                        ),
                                       ]
                                     )
                                   ]
@@ -478,13 +514,190 @@ class _DetailsProjectScreenState extends State<DetailsProjectScreen> {
                         }
                       );
                     }
-                  )
-                ]
-              )
-            )
+                  ),
+                  const SizedBox(height: 30),
+                  Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    margin: EdgeInsets.zero,
+                    child: ExpansionTile(
+                      backgroundColor: whiteColor,
+                      collapsedBackgroundColor: whiteColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      childrenPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      title: const Text(
+                        'TAREAS COMPLETADAS DEL PROYECTO',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: darkGrey,
+                          fontFamily: 'Montserrat',
+                        ),
+                      ),
+                      trailing: const Icon(Icons.keyboard_arrow_down, color: darkGrey),
+                      children: [
+                      StreamBuilder<QuerySnapshot>(
+                        stream: _firestoreService.getTasksByProjectStream(
+                          projectId: _projectId,
+                          isCompleted: true,
+                        ),
+                        builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator(color: primaryGreen));
+                            }
+                            if (snapshot.hasError) {
+                              return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: errorRed, fontSize: 16, fontFamily: 'Roboto')));
+                            }
+                            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                              return const Center(child: Text('No hay tareas completadas para este proyecto.', style: TextStyle(color: mediumGrey, fontSize: 16, fontStyle: FontStyle.italic)));
+                            }
+
+                            final completedTasks = snapshot.data!.docs;
+                            return ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: completedTasks.length,
+                              itemBuilder: (context, index) {
+                                final task = completedTasks[index].data() as Map<String, dynamic>;
+                                final taskId = completedTasks[index].id;
+                                return Card(
+                                  elevation: 4,
+                                  margin: const EdgeInsets.symmetric(vertical: 8),
+                                  color: whiteColor,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  child: InkWell(
+                                    onTap: () {
+                                      showDialog(context: context, builder: (context) => DetailsTaskScreen(taskData: task, taskId: taskId));
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  task['title'] ?? '',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 16,
+                                                    decoration: TextDecoration.lineThrough,
+                                                    color: mediumGrey,
+                                                    fontFamily: 'Montserrat',
+                                                  ),
+                                                ),
+                                                if (task['phase'] != null && (task['phase'] as String).isNotEmpty)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(top: 4.0),
+                                                    child: Text('Fase: ${task['phase']}', style: TextStyle(color: mediumGrey, fontSize: 14, fontFamily: 'Roboto')),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete, color: errorRed, size: 26),
+                                            tooltip: 'Eliminar tarea',
+                                            onPressed: () async {
+                                              final confirm = await showDialog<bool>(
+                                                context: context,
+                                                builder: (context) => AlertDialog(
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                                  title: const Text('Eliminar tarea', style: TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
+                                                  content: const Text('¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
+                                                  actions: [
+                                                    TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold))),
+                                                    ElevatedButton(
+                                                      onPressed: () => Navigator.pop(context, true),
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: errorRed, 
+                                                        foregroundColor: whiteColor, 
+                                                        elevation: 0,
+                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                                      ),
+                                                      child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)), 
+                                                    ),
+                                                  ],
+                                                  elevation: 10,
+                                                ),
+                                              );
+                                              if (confirm == true) await _firestoreService.deleteTask(taskId);
+                                            },
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.undo, color: completedOrange, size: 26),
+                                            tooltip: 'Marcar como pendiente',
+                                            onPressed: () async {
+                                              await _firestoreService.toggleTaskCompleted(taskId, false);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_projectData['hasClient'] == true && client != null) ...[
+                    const SizedBox(height: 30),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          // Envía los datos del cliente y del proyecto a la pantalla de facturación
+                          Navigator.pushNamed(
+                            context,
+                            '/facturacion',
+                            arguments: {
+                              'projectId': _projectId,
+                              'projectName': _projectData['title'] ?? '',
+                            },
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2196F3), // Azul
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 8,
+                          shadowColor: const Color(0xFF2196F3).withOpacity(0.3),
+                        ).copyWith(
+                          overlayColor: MaterialStateProperty.resolveWith<Color>(
+                            (Set<MaterialState> states) {
+                              if (states.contains(MaterialState.pressed)) {
+                                return Colors.white.withOpacity(0.2);
+                              }
+                              return const Color(0xFF2196F3);
+                            },
+                          ),
+                        ),
+                        icon: const Icon(Icons.receipt_long, color: Colors.white, size: 24),
+                        label: const Text(
+                          'FACTURAR',
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           );
-        }
-      )
+        },
+      ),
     );
   }
 }

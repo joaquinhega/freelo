@@ -46,7 +46,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
             fontFamily: 'Montserrat',
           ),
         ),
-        automaticallyImplyLeading: false, // Oculta el botón de retroceso automático.
+        automaticallyImplyLeading: false,
         backgroundColor: whiteColor,
         elevation: 4,
         centerTitle: false,

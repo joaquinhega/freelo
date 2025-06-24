@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // Importa Firebase Authentic
 import '../services/auth_service.dart'; // Servicio personalizado para lógica de autenticación
 import 'widgets/Footer.dart'; // Widget de pie de página (barra de navegación inferior)
 import 'package:cloud_firestore/cloud_firestore.dart'; // Importa Cloud Firestore para la base de datos
+import '../services/firestore_service.dart'; // Servicio personalizado para interactuar con Firestore
 
 // Pantalla de configuración del usuario.
 class SettingsScreen extends StatefulWidget {
@@ -15,8 +16,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   User? _currentUser; // Almacena la información del usuario actualmente autenticado
   Map<String, dynamic>? _freelancerDetails; // Almacena los detalles del perfil del freelancer
-
-  final bool _notificaciones = false; // Estado para la configuración de notificaciones (actualmente fijo en false)
   bool _isGoogleLoggedIn = false; // Indica si el usuario inició sesión con Google
 
   // Controladores para los campos de texto del formulario de perfil.
@@ -74,25 +73,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // Carga los detalles del perfil del freelancer desde Firestore.
   void _loadFreelancerDetails(String uid) async {
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('profile')
-        .doc('freelancerDetails')
-        .get(); // Intenta obtener el documento 'freelancerDetails'
-
-    if (doc.exists && doc.data() != null) {
-      // Si el documento existe, carga los datos en los controladores de texto.
+    final details = await FirestoreService().getFreelancerDetails();
+    if (details != null) {
       setState(() {
-        _freelancerDetails = doc.data();
-        _firstNameController.text = _freelancerDetails?['firstName'] ?? '';
-        _lastNameController.text = _freelancerDetails?['lastName'] ?? '';
-        _emailController.text = _freelancerDetails?['email'] ?? '';
-        _phoneController.text = _freelancerDetails?['phone'] ?? '';
-        _addressController.text = _freelancerDetails?['address'] ?? '';
+        _freelancerDetails = details;
+        _firstNameController.text = details['firstName'] ?? '';
+        _lastNameController.text = details['lastName'] ?? '';
+        _emailController.text = details['email'] ?? '';
+        _phoneController.text = details['phone'] ?? '';
+        _addressController.text = details['address'] ?? '';
       });
     } else if (_isGoogleLoggedIn) {
-      // Si no existe el documento y el usuario es de Google, precarga con datos de Google.
       setState(() {
         _freelancerDetails = {
           'firstName': _currentUser!.displayName?.split(' ').first ?? '',
@@ -111,63 +102,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // Guarda los detalles del freelancer en Firestore.
-  Future<void> _saveFreelancerDetails() async {
-    setState(() => _saving = true); // Activa el estado de guardado
+Future<void> _saveFreelancerDetails() async {
+  setState(() => _saving = true);
 
-    final firstName = _firstNameController.text.trim();
-    final lastName = _lastNameController.text.trim();
-    final email = _emailController.text.trim();
-    final phone = _phoneController.text.trim();
-    final address = _addressController.text.trim();
+  final firstName = _firstNameController.text.trim();
+  final lastName = _lastNameController.text.trim();
+  final email = _emailController.text.trim();
+  final phone = _phoneController.text.trim();
+  final address = _addressController.text.trim();
 
-    // Validaciones de campos obligatorios según el proveedor de inicio de sesión.
-    if (_isGoogleLoggedIn) {
-      if (phone.isEmpty) {
-        _showSnackBar("El teléfono es obligatorio.", isError: true);
-        setState(() => _saving = false);
-        return;
-      }
-    } else {
-      if (firstName.isEmpty || lastName.isEmpty || email.isEmpty || phone.isEmpty) {
-        _showSnackBar("Completa todos los campos obligatorios.", isError: true);
-        setState(() => _saving = false);
-        return;
-      }
+  if (_isGoogleLoggedIn) {
+    if (phone.isEmpty) {
+      _showSnackBar("El teléfono es obligatorio.", isError: true);
+      setState(() => _saving = false);
+      return;
     }
-
-    try {
-      // Guarda los detalles del freelancer en la subcolección 'profile'.
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .collection('profile')
-          .doc('freelancerDetails')
-          .set({
-            'firstName': firstName,
-            'lastName': lastName,
-            'email': email,
-            'phone': phone,
-            'address': address,
-          }, SetOptions(merge: true)); // Usa merge para no sobrescribir todo el documento
-
-      // Actualiza el nombre del usuario directamente en el documento del usuario principal.
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .set({
-            'nombre': '$firstName $lastName',
-          }, SetOptions(merge: true));
-
-      setState(() {
-        _editing = false; // Sale del modo edición
-      });
-      _loadFreelancerDetails(_currentUser!.uid); // Recarga los detalles para reflejar los cambios
-      _showSnackBar("Datos guardados correctamente.", isError: false); // Muestra mensaje de éxito
-    } catch (e) {
-      _showSnackBar("Error al guardar: $e", isError: true); // Muestra mensaje de error
+  } else {
+    if (firstName.isEmpty || lastName.isEmpty || email.isEmpty || phone.isEmpty) {
+      _showSnackBar("Completa todos los campos obligatorios.", isError: true);
+      setState(() => _saving = false);
+      return;
     }
-    setState(() => _saving = false); // Desactiva el estado de guardado
   }
+
+  try {
+    await FirestoreService().createFreelancerDetails(
+      _currentUser!.uid,
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      phone: phone,
+      address: address,
+    );
+    // Actualiza el nombre en el documento principal del usuario
+    // (puedes agregar un método en FirestoreService si prefieres)
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_currentUser!.uid)
+        .set({'nombre': '$firstName $lastName'}, SetOptions(merge: true));
+
+    setState(() {
+      _editing = false;
+    });
+    _loadFreelancerDetails(_currentUser!.uid);
+    _showSnackBar("Datos guardados correctamente.", isError: false);
+  } catch (e) {
+    _showSnackBar("Error al guardar: $e", isError: true);
+  }
+  setState(() => _saving = false);
+}
 
   // Muestra un SnackBar (mensaje temporal en la parte inferior de la pantalla).
   void _showSnackBar(String message, {bool isError = false, String? actionLabel, VoidCallback? onActionPressed}) {
@@ -240,67 +223,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           filled: true,
           fillColor: whiteColor, // Color de fondo del campo
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
-      ),
-    );
-  }
-
-  // Widget para elementos de la sección "Acerca de".
-  Widget _aboutItem({
-    required String title,
-    required VoidCallback? onTap, // Callback al tocar el elemento
-    IconData? icon,
-    String? subtitle,
-  }) {
-    return Card(
-      elevation: 3, // Sombra de la tarjeta
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15), // Bordes redondeados
-      ),
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      color: whiteColor,
-      child: InkWell(
-        onTap: onTap, // Acción al tocar
-        borderRadius: BorderRadius.circular(15),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
-          child: Row(
-            children: [
-              if (icon != null) ...[ // Muestra el icono si se proporciona
-                Icon(icon, color: primaryGreen, size: 26),
-                const SizedBox(width: 18),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                        color: onTap == null ? mediumGrey : darkGrey, // Color según si es interactivo
-                        fontFamily: 'Montserrat',
-                      ),
-                    ),
-                    if (subtitle != null) ...[ // Muestra subtítulo si se proporciona
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: onTap == null ? mediumGrey : mediumGrey,
-                          fontFamily: 'Roboto',
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (onTap != null) // Muestra flecha si el elemento es interactivo
-                Icon(Icons.arrow_forward_ios, size: 20, color: mediumGrey),
-            ],
-          ),
         ),
       ),
     );
@@ -428,52 +350,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _infoTile('Teléfono', freelancer['phone'] ?? '', icon: Icons.phone_outlined),
             _infoTile('Dirección', freelancer['address'] ?? '', icon: Icons.location_on_outlined),
           ],
-          const SizedBox(height: 30),
-          Text('Preferencias', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
-          const SizedBox(height: 16),
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            margin: EdgeInsets.zero,
-            color: whiteColor,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: SwitchListTile( // Widget para la opción de notificaciones
-                value: _notificaciones,
-                onChanged: null, // Deshabilitado, no permite cambiarlo
-                title: const Text('Notificaciones', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
-                activeColor: primaryGreen,
-                inactiveThumbColor: mediumGrey,
-                inactiveTrackColor: mediumGrey.withOpacity(0.3),
-              ),
-            ),
-          ),
-          const SizedBox(height: 30),
-          Text('Acerca de', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: darkGrey, fontFamily: 'Montserrat')),
-          const SizedBox(height: 16),
-          _aboutItem(
-            title: 'Versión de la App',
-            subtitle: '1.0.0 Beta',
-            onTap: null, // No interactivo
-            icon: Icons.info_outline,
-          ),
-          _aboutItem(
-            title: 'Términos y Condiciones',
-            onTap: null, // No interactivo
-            icon: Icons.description_outlined,
-          ),
-          _aboutItem(
-            title: 'Políticas de privacidad',
-            onTap: null, // No interactivo
-            icon: Icons.policy_outlined,
-          ),
-          _aboutItem(
-            title: 'Contacto de soporte',
-            onTap: null, // No interactivo
-            icon: Icons.help_outline,
-          ),
           const SizedBox(height: 40),
           SizedBox(
             width: double.infinity,

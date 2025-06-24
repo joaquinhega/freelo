@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Para autenticación de usuario
-import 'package:cloud_firestore/cloud_firestore.dart'; // Para interactuar con Firestore
-import 'package:intl/intl.dart'; // Para formatear fechas
-import '../services/pdf_generator_service.dart'; // Servicio para generar PDF
-import 'package:open_filex/open_filex.dart'; // Para abrir archivos en el dispositivo
-import 'package:flutter/foundation.dart' show kIsWeb; // Para detectar si se ejecuta en web
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import '../services/pdf_generator_service.dart';
+import '../services/firestore_service.dart'; // Importa el servicio centralizado
+import 'package:open_filex/open_filex.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
-// Pantalla para la creación y gestión de facturas.
 class FacturacionScreen extends StatefulWidget {
   const FacturacionScreen({super.key});
 
@@ -15,13 +14,11 @@ class FacturacionScreen extends StatefulWidget {
 }
 
 class _FacturacionScreenState extends State<FacturacionScreen> {
-  final _formKey = GlobalKey<FormState>(); // Clave para el formulario de validación
-  // Controladores para los campos de texto del formulario.
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _clienteController = TextEditingController();
   final TextEditingController _fechaController = TextEditingController();
   final TextEditingController _descripcionController = TextEditingController();
   final TextEditingController _precioController = TextEditingController();
-
   final TextEditingController _numeroFacturaController = TextEditingController();
   final TextEditingController _fechaVencimientoController = TextEditingController();
   final TextEditingController _notasCondicionesController = TextEditingController();
@@ -29,9 +26,9 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _telefonoClienteController = TextEditingController();
 
-  final PdfGeneratorService _pdfGeneratorService = PdfGeneratorService(); // Instancia del servicio PDF
+  final PdfGeneratorService _pdfGeneratorService = PdfGeneratorService();
+  final FirestoreService _firestoreService = FirestoreService(); // Instancia centralizada
 
-  // Definición de colores personalizados para la UI.
   static const Color primaryGreen = Color(0xFF2E7D32);
   static const Color whiteColor = Colors.white;
   static const Color offWhite = Color(0xFFF0F2F5);
@@ -40,7 +37,6 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
   static const Color accentBlue = Color(0xFF2196F3);
   static const Color errorRed = Color(0xFFD32F2F);
 
-  // Detalles del freelancer (usuario actual)
   Map<String, String> _freelancerDetails = {
     'name': '',
     'address': '',
@@ -48,92 +44,60 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
     'phone': '',
   };
 
-  bool _initialized = false; // Flag para inicialización
-  String? _projectId; // ID del proyecto, si se pasó como argumento
+  bool _initialized = false;
+  String? _projectId;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Se ejecuta una sola vez al cargar las dependencias del widget.
     if (!_initialized) {
-      // Obtiene argumentos de la ruta, si los hay (ej. projectId).
       final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       _projectId = args?['projectId'] as String?;
       final String? projectName = args?['projectName'];
 
-      // Inicializa los controladores de fecha con fechas actuales/futuras.
       _fechaController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
       _fechaVencimientoController.text = DateFormat('dd/MM/yyyy').format(DateTime.now().add(const Duration(days: 30)));
 
-      _loadFreelancerDetails(); // Carga detalles del freelancer
+      _loadFreelancerDetails();
       if (_projectId != null) {
-        _loadProjectAndClientData(_projectId!); // Carga datos de proyecto/cliente si hay projectId
+        _loadProjectAndClientData(_projectId!);
       } else {
-        // Establece una descripción predeterminada si hay nombre de proyecto.
         _descripcionController.text = projectName != null
             ? 'Servicio de desarrollo para proyecto "$projectName"'
             : '';
       }
-      _initialized = true; // Marca como inicializado
+      _initialized = true;
     }
   }
 
-  // Carga datos de un proyecto y cliente desde Firestore.
+  // --- LIMPIO: Carga datos de un proyecto y cliente usando FirestoreService ---
   Future<void> _loadProjectAndClientData(String projectId) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    // Consulta el documento del proyecto.
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('projects')
-        .doc(projectId)
-        .get();
-
-    if (doc.exists && doc.data() != null) {
-      final data = doc.data()!;
-      _descripcionController.text = ''; // Resetea descripción
-      _fechaController.text = DateFormat('dd/MM/yyyy').format(DateTime.now()); // Fecha actual
-
-      final client = data['client'] ?? {}; // Datos del cliente
-      _clienteController.text = client['nombre'] ?? ''; // Nombre del cliente
-      _empresaController.text = data['title'] ?? ''; // Título del proyecto como empresa
-      _emailController.text = client['email'] ?? ''; // Email del cliente
-      _telefonoClienteController.text = client['telefono'] ?? ''; // Teléfono del cliente
-      _notasCondicionesController.text = ''; // Limpia notas
-      setState(() {}); // Actualiza la UI
+    final data = await _firestoreService.getProjectById(projectId);
+    if (data != null) {
+      _descripcionController.text = '';
+      _fechaController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
+      final client = data['client'] ?? {};
+      _clienteController.text = client['nombre'] ?? '';
+      _empresaController.text = data['title'] ?? '';
+      _emailController.text = client['email'] ?? '';
+      _telefonoClienteController.text = client['telefono'] ?? '';
+      _notasCondicionesController.text = '';
+      setState(() {});
     }
   }
 
-  // Carga los detalles del perfil del freelancer desde Firestore.
+  // --- LIMPIO: Carga detalles del freelancer usando FirestoreService ---
   void _loadFreelancerDetails() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      // Consulta el documento de detalles del freelancer.
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('profile')
-          .doc('freelancerDetails')
-          .get();
-      if (doc.exists && doc.data() != null) {
-        setState(() {
-          // Actualiza los detalles del freelancer.
-          _freelancerDetails = {
-            'name': '${doc.data()!['firstName'] ?? ''} ${doc.data()!['lastName'] ?? ''}'.trim(),
-            'address': doc.data()!['address'] ?? '',
-            'email': doc.data()!['email'] ?? '',
-            'phone': doc.data()!['phone'] ?? '',
-          };
-        });
-      }
+    final details = await _firestoreService.getFreelancerDetails();
+    if (details != null) {
+      setState(() {
+        _freelancerDetails = details;
+      });
     }
   }
 
   @override
   void dispose() {
-    // Libera los controladores de texto para evitar fugas de memoria.
     _clienteController.dispose();
     _fechaController.dispose();
     _descripcionController.dispose();
@@ -147,16 +111,15 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
     super.dispose();
   }
 
-  // Lógica principal para generar y guardar la factura.
+  // --- LIMPIO: Genera y guarda la factura usando FirestoreService ---
   void _generarFactura() async {
-    if (_formKey.currentState!.validate()) { // Valida todos los campos del formulario
+    if (_formKey.currentState!.validate()) {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         _showSnackBar('Usuario no autenticado', isError: true);
         return;
       }
 
-      // Parsea y valida la fecha de facturación.
       DateTime? fechaFactura;
       try {
         final partes = _fechaController.text.split('/');
@@ -170,7 +133,6 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
         return;
       }
 
-      // Parsea y valida la fecha de vencimiento.
       DateTime? fechaVencimiento;
       try {
         final partes = _fechaVencimientoController.text.split('/');
@@ -184,7 +146,6 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
         return;
       }
 
-      // Parsea y valida el precio.
       double? precioParsed = double.tryParse(_precioController.text.trim());
       if (precioParsed == null) {
         _showSnackBar('Precio inválido', isError: true);
@@ -192,30 +153,24 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
       }
 
       try {
-        // Guarda los datos de la factura en Firestore.
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('facturas')
-            .add({
-              'numeroFactura': _numeroFacturaController.text.trim(),
-              'clienteNombre': _clienteController.text.trim(),
-              'clienteEmpresa': _empresaController.text.trim(),
-              'clienteEmail': _emailController.text.trim(),
-              'clienteTelefono': _telefonoClienteController.text.trim(),
-              'fechaFacturacion': fechaFactura,
-              'fechaVencimiento': fechaVencimiento,
-              'descripcionServicio': _descripcionController.text.trim(),
-              'precio': precioParsed,
-              'notasCondiciones': _notasCondicionesController.text.trim(),
-              'timestamp': FieldValue.serverTimestamp(),
-              'projectId': _projectId,
-              'projectName': _empresaController.text.trim(),
-            });
+        // Guarda la factura usando FirestoreService
+        await _firestoreService.addInvoiceFull(
+          numeroFactura: _numeroFacturaController.text.trim(),
+          clienteNombre: _clienteController.text.trim(),
+          clienteEmpresa: _empresaController.text.trim(),
+          clienteEmail: _emailController.text.trim(),
+          clienteTelefono: _telefonoClienteController.text.trim(),
+          emissionDate: fechaFactura,
+          dueDate: fechaVencimiento,
+          descripcionServicio: _descripcionController.text.trim(),
+          amount: precioParsed,
+          notasCondiciones: _notasCondicionesController.text.trim(),
+          projectId: _projectId,
+          projectName: _empresaController.text.trim(),
+        );
 
         _showSnackBar('Factura guardada en la nube con éxito', isError: false);
 
-        // Genera el PDF de la factura usando PdfGeneratorService.
         final pdfBytes = await _pdfGeneratorService.generateInvoicePdf(
           invoiceNumber: _numeroFacturaController.text.trim(),
           clientName: _clienteController.text.trim(),
@@ -230,16 +185,12 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
           freelancerDetails: _freelancerDetails,
         );
 
-        // Define el nombre del archivo PDF.
         final filename = 'Factura_${_numeroFacturaController.text.trim().replaceAll('/', '-')}_${_clienteController.text.trim()}.pdf';
-        // Guarda el PDF en el dispositivo.
         final savedFile = await _pdfGeneratorService.savePdfToDevice(pdfBytes, filename);
 
-        // Muestra un SnackBar según la plataforma (web o móvil).
         if (kIsWeb) {
           _showSnackBar('PDF generado y descargado en tu navegador', isError: false, isInfo: true);
         } else if (savedFile != null) {
-          // Muestra opción para abrir el PDF en móvil.
           _showSnackBar('PDF de factura guardado en ${savedFile.path}', isError: false, isInfo: true, actionLabel: 'Abrir', onActionPressed: () { OpenFilex.open(savedFile.path); });
         } else {
           _showSnackBar('Error al guardar el PDF de la factura', isError: true);
@@ -248,7 +199,6 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
         _showSnackBar('Error al generar o guardar el PDF: $e', isError: true);
       }
 
-      // Cierra la pantalla después de un retraso.
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) {
           Navigator.of(context).pop();
@@ -257,7 +207,6 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
     }
   }
 
-  // Muestra un SnackBar con mensajes de éxito, error o información.
   void _showSnackBar(String message, {bool isError = false, bool isInfo = false, String? actionLabel, VoidCallback? onActionPressed}) {
     Color backgroundColor = isError ? errorRed : (isInfo ? accentBlue : primaryGreen);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -267,9 +216,9 @@ class _FacturacionScreenState extends State<FacturacionScreen> {
         action: actionLabel != null && onActionPressed != null
             ? SnackBarAction(label: actionLabel, onPressed: onActionPressed, textColor: whiteColor)
             : null,
-        behavior: SnackBarBehavior.floating, // Comportamiento flotante del SnackBar
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), // Borde redondeado
-        margin: const EdgeInsets.all(10), // Margen
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(10),
       ),
     );
   }

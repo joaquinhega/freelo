@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/firestore_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:myapp/services/auth_service.dart';
@@ -22,46 +22,47 @@ class RegisterState extends State<Register> {
   final TextEditingController _addressController = TextEditingController();
 
   // Método para registrar usuario con email y contraseña
-  void _register() async {
-    final firstName = _firstNameController.text.trim();
-    final lastName = _lastNameController.text.trim();
-    final email = _emailController.text.trim();
-    final phone = _phoneController.text.trim();
-    final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
-    final address = _addressController.text.trim();
+void _register() async {
+  final firstName = _firstNameController.text.trim();
+  final lastName = _lastNameController.text.trim();
+  final email = _emailController.text.trim();
+  final phone = _phoneController.text.trim();
+  final password = _passwordController.text;
+  final confirmPassword = _confirmPasswordController.text;
+  final address = _addressController.text.trim();
 
-    if (firstName.isEmpty || lastName.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty || phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Completa todos los campos obligatorios.")),
-      );
-      return;
-    }
-
-    if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Las contraseñas no coinciden")),
-      );
-      return;
-    }
-
-    final user = await AuthService().register(email, password);
-    if (user != null) {
-      // Guarda los datos del usuario en Firestore (colección users)
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        'nombre': '$firstName $lastName',
-        'email': email,
-        'telefono': phone,
-        'direccion': address,
-      });
-      // También puedes guardar detalles adicionales en otra colección si lo necesitas
-      Navigator.pushReplacementNamed(context, Routes.dashboard);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Error al registrar usuario")),
-      );
-    }
+  if (firstName.isEmpty || lastName.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty || phone.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Completa todos los campos obligatorios.")),
+    );
+    return;
   }
+
+  if (password != confirmPassword) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Las contraseñas no coinciden")),
+    );
+    return;
+  }
+
+  final user = await AuthService().register(email, password);
+  if (user != null) {
+    // Guarda los datos del usuario en Firestore usando FirestoreService
+    await FirestoreService().createFreelancerDetails(
+      user.uid,
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      phone: phone,
+      address: address,
+    );
+    Navigator.pushReplacementNamed(context, Routes.dashboard);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Error al registrar usuario")),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -272,13 +273,18 @@ class RegisterState extends State<Register> {
                     try {
                       final user = await AuthService().signInWithGoogle();
                       if (user != null) {
-                        // Guarda datos mínimos si es Google
-                        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-                          'nombre': user.displayName ?? '',
-                          'email': user.email ?? '',
-                          'telefono': '',
-                          'direccion': '',
-                        });
+                        // Verifica si ya existe freelancerDetails usando FirestoreService
+                        final exists = await FirestoreService().freelancerDetailsExists(user.uid);
+                        if (!exists) {
+                          await FirestoreService().createFreelancerDetails(
+                            user.uid,
+                            firstName: user.displayName?.split(' ').first ?? '',
+                            lastName: user.displayName?.split(' ').skip(1).join(' ') ?? '',
+                            email: user.email ?? '',
+                            phone: '',
+                            address: '',
+                          );
+                        }
                         Navigator.pushReplacementNamed(context, Routes.dashboard);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(

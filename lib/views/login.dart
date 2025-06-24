@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:myapp/services/firestore_service.dart';
@@ -191,14 +190,9 @@ class LoginState extends State<Login> {
                   try {
                     final user = await AuthService().signInWithGoogle();
                     if (user != null) {
-                      // Verifica si ya existe freelancerDetails
-                      final doc = await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(user.uid)
-                          .collection('profile')
-                          .doc('freelancerDetails')
-                          .get();
-                      if (!doc.exists) {
+                      // Verifica si ya existe freelancerDetails usando FirestoreService
+                      final exists = await FirestoreService().freelancerDetailsExists(user.uid);
+                      if (!exists) {
                         // Si no existe, lo crea con los datos de Google y deja teléfono/dirección vacíos
                         await FirestoreService().createFreelancerDetails(
                           user.uid,

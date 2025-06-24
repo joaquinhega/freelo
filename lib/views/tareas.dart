@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart'; // Importa la biblioteca fundamental de Flutter para construir interfaces de usuario.
 import 'package:cloud_firestore/cloud_firestore.dart'; // Importa Cloud Firestore, la base de datos NoSQL de Firebase.
+import 'package:firebase_auth/firebase_auth.dart'; // Importa Firebase Auth para autenticación de usuarios.
 import '../services/firestore_service.dart'; // Importa un servicio personalizado para interactuar con Firestore.
 import 'widgets/new_tarea.dart'; // Importa el widget para crear nuevas tareas.
 import 'widgets/details_task.dart'; // Importa el widget para mostrar los detalles de una tarea.
 import 'widgets/Footer.dart'; // Importa el widget de pie de página (barra de navegación inferior).
+
 
 // Definición de la pantalla de Tareas como un StatefulWidget para manejar el estado.
 class TareasScreen extends StatefulWidget {
@@ -20,136 +22,232 @@ class _TareasScreenState extends State<TareasScreen> {
 
   // Definición de una paleta de colores para la interfaz de usuario.
   static const Color primaryGreen = Color(0xFF2E7D32);
-  static const Color lightGreen = Color(0xFFE8F5E9);
   static const Color whiteColor = Colors.white;
   static const Color offWhite = Color(0xFFF0F2F5);
   static const Color darkGrey = Color(0xFF212121);
   static const Color mediumGrey = Color(0xFF616161);
   static const Color errorRed = Color(0xFFD32F2F);
-  static const Color completedOrange = Color(0xFFF57C00); // Color para tareas completadas.
+  static const Color completedOrange = Color(0xFFF57C00);
+
+  late Stream<QuerySnapshot> _tasksStream; // Stream para tareas pendientes.
+  late Stream<QuerySnapshot> _completedTasksStream; // Stream para tareas completadas.
+
+@override
+void initState() {
+  super.initState();
+  _tasksStream = _firestoreService.getPendingTasksStream();
+  _completedTasksStream = _firestoreService.getCompletedTasksStream();
+}
+
+  // Elimina una tarea de Firestore.
+  Future<void> _deleteTask(String taskId) async {
+    try {
+      await _firestoreService.deleteTask(taskId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Tarea eliminada correctamente.")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error al eliminar la tarea: $e")),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold proporciona la estructura visual básica de la pantalla.
     return Scaffold(
-      backgroundColor: offWhite, // Color de fondo de la pantalla.
       appBar: AppBar(
-        // Configuración de la barra de aplicación en la parte superior.
+        leading: const BackButton(color: darkGrey),
         title: const Text(
-          'Tareas', // Título de la AppBar.
-          style: TextStyle(
-            color: darkGrey,
-            fontWeight: FontWeight.bold,
-            fontSize: 28,
-            fontFamily: 'Montserrat',
-          ),
+          'Mis Tareas',
+          style: TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontSize: 24, fontFamily: 'Montserrat'),
         ),
-        automaticallyImplyLeading: false, // Deshabilita el botón de retroceso automático.
-        backgroundColor: whiteColor, // Color de fondo de la AppBar.
-        elevation: 4, // Sombra de la AppBar.
-        centerTitle: false, // Alineación del título.
-        toolbarHeight: 90, // Altura de la barra de herramientas.
-        surfaceTintColor: Colors.transparent, // Color de la superficie cuando hay desplazamiento.
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20), // Bordes redondeados en la parte inferior de la AppBar.
-          ),
-        ),
+        backgroundColor: whiteColor,
+        elevation: 4,
+        centerTitle: false,
+        toolbarHeight: 90,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(20))),
       ),
-      bottomNavigationBar: const Footer(currentIndex: 1), // Barra de navegación inferior con el índice de la pestaña de Tareas.
-      floatingActionButton: FloatingActionButton(
-        // Botón flotante para añadir nuevas tareas.
-        onPressed: () {
-          // Muestra un diálogo al presionar el botón flotante.
-          showDialog(
-            context: context,
-            barrierDismissible: true, // Permite cerrar el diálogo tocando fuera de él.
-            builder: (context) => const Dialog(
-              backgroundColor: Colors.transparent, // Fondo transparente para el diálogo.
-              insetPadding: EdgeInsets.all(24), // Espaciado interior del diálogo.
-              child: NewTaskScreen(), // Contenido del diálogo: el widget para crear nuevas tareas.
-            ),
-          );
-        },
-        backgroundColor: primaryGreen, // Color de fondo del botón.
-        foregroundColor: whiteColor, // Color del icono del botón.
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0), // Bordes redondeados del botón.
-        ),
-        elevation: 8, // Sombra del botón.
-        highlightElevation: 12, // Sombra cuando está presionado.
-        splashColor: lightGreen, // Color de la "onda" al tocar el botón.
-        child: const Icon(Icons.add, size: 30), // Icono de añadir.
-      ),
+      backgroundColor: offWhite,
       body: StreamBuilder<QuerySnapshot>(
-        // StreamBuilder escucha cambios en una colección de Firestore en tiempo real.
-        stream: _firestoreService.getUserTasksStream(), // Obtiene el stream de tareas del usuario.
+        stream: _tasksStream, // Escucha los cambios en las tareas pendientes.
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            // Si el stream está esperando datos, muestra un indicador de carga.
             return const Center(child: CircularProgressIndicator(color: primaryGreen));
           }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: errorRed, fontSize: 16, fontFamily: 'Roboto')));
+          }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            // Si no hay datos o la lista de documentos está vacía, muestra un mensaje.
-            return Center(
-              child: Text(
-                'No tienes tareas aún.',
-                style: TextStyle(color: mediumGrey, fontSize: 18, fontStyle: FontStyle.italic),
-              ),
-            );
-          }
-
-          final allTasks = snapshot.data!.docs; // Obtiene todos los documentos de tareas.
-          // Filtra las tareas para mostrar solo las que no están completadas (isCompleted es null o false).
-          final tasks = allTasks.where((task) =>
-              task['isCompleted'] == null || task['isCompleted'] == false
-          ).toList();
-
-          if (tasks.isEmpty) {
-            // Si después de filtrar no hay tareas pendientes, muestra un mensaje específico.
-            return Center(
-              child: Text(
-                'No tienes tareas pendientes.',
-                style: TextStyle(color: mediumGrey, fontSize: 18, fontStyle: FontStyle.italic),
-              ),
-            );
-          }
-
-          // Si hay tareas pendientes, las muestra en una lista.
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-                  itemCount: tasks.length, // Número de tareas a mostrar.
-                  itemBuilder: (context, index) {
-                    final task = tasks[index]; // Obtiene el documento de la tarea actual.
-                    final taskData = task.data() as Map<String, dynamic>; // Datos de la tarea como mapa.
-                    final taskId = task.id; // ID del documento de la tarea.
-
-                    return Card(
-                      // Tarjeta para mostrar cada tarea.
-                      elevation: 6, // Sombra de la tarjeta.
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15), // Bordes redondeados.
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(child: Text('No tienes tareas pendientes.', style: TextStyle(color: mediumGrey, fontSize: 16, fontStyle: FontStyle.italic))),
+                  const SizedBox(height: 30),
+                  // ExpansionTile para tareas completadas
+                  Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    margin: EdgeInsets.zero,
+                    child: ExpansionTile(
+                      backgroundColor: whiteColor,
+                      collapsedBackgroundColor: whiteColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      childrenPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      title: const Text(
+                        'TAREAS COMPLETADAS',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: darkGrey,
+                          fontFamily: 'Montserrat',
+                        ),
                       ),
-                      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 10), // Margen de la tarjeta.
-                      color: whiteColor, // Color de fondo de la tarjeta.
+                      trailing: const Icon(Icons.keyboard_arrow_down, color: darkGrey),
+                      children: [
+                        StreamBuilder<QuerySnapshot>(
+                          stream: _completedTasksStream,
+                          builder: (context, completedSnapshot) {
+                            if (completedSnapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator(color: primaryGreen));
+                            }
+                            if (completedSnapshot.hasError) {
+                              return Center(child: Text('Error: ${completedSnapshot.error}', style: TextStyle(color: errorRed, fontSize: 16, fontFamily: 'Roboto')));
+                            }
+                            if (!completedSnapshot.hasData || completedSnapshot.data!.docs.isEmpty) {
+                              return const Center(child: Text('No hay tareas completadas.', style: TextStyle(color: mediumGrey, fontSize: 16, fontStyle: FontStyle.italic)));
+                            }
+
+                            final completedTasks = completedSnapshot.data!.docs;
+                            return ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: completedTasks.length,
+                              itemBuilder: (context, index) {
+                                final task = completedTasks[index].data() as Map<String, dynamic>;
+                                final taskId = completedTasks[index].id;
+                                return Card(
+                                  elevation: 4,
+                                  margin: const EdgeInsets.symmetric(vertical: 8),
+                                  color: whiteColor,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  child: InkWell(
+                                    onTap: () {
+                                      showDialog(context: context, builder: (context) => DetailsTaskScreen(taskData: task, taskId: taskId));
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  task['title'] ?? '',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 16,
+                                                    decoration: TextDecoration.lineThrough,
+                                                    color: mediumGrey,
+                                                    fontFamily: 'Montserrat',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete, color: errorRed, size: 26),
+                                            tooltip: 'Eliminar tarea',
+                                            onPressed: () async {
+                                              final confirm = await showDialog<bool>(
+                                                context: context,
+                                                builder: (context) => AlertDialog(
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                                  title: const Text('Eliminar tarea', style: TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
+                                                  content: const Text('¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
+                                                  actions: [
+                                                    TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold))),
+                                                    ElevatedButton(
+                                                      onPressed: () => Navigator.pop(context, true),
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: errorRed, 
+                                                        foregroundColor: whiteColor, 
+                                                        elevation: 0,
+                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                                      ),
+                                                      child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)), 
+                                                    ),
+                                                  ],
+                                                  elevation: 10,
+                                                ),
+                                              );
+                                              if (confirm == true) await _deleteTask(taskId);
+                                            },
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.undo, color: completedOrange, size: 26),
+                                            tooltip: 'Marcar como pendiente',
+                                            onPressed: () async {
+                                              await _firestoreService.toggleTaskCompleted(taskId, false);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final tasks = snapshot.data!.docs;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('TAREAS PENDIENTES', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: darkGrey, fontFamily: 'Montserrat')),
+                const SizedBox(height: 16),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: tasks.length,
+                  itemBuilder: (context, index) {
+                    final task = tasks[index].data() as Map<String, dynamic>;
+                    final taskId = tasks[index].id;
+                    final isCompleted = task['isCompleted'] == true;
+                    return Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      color: whiteColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       child: InkWell(
-                        // Permite que la tarjeta sea "tappable" (se pueda tocar).
                         onTap: () {
-                          // Al tocar la tarjeta, muestra un diálogo con los detalles de la tarea.
-                          showDialog(
-                            context: context,
-                            builder: (context) => DetailsTaskScreen(
-                              taskData: taskData, // Pasa los datos de la tarea al widget de detalles.
-                              taskId: taskId, // Pasa el ID de la tarea.
-                            ),
-                          );
+                          showDialog(context: context, builder: (context) => DetailsTaskScreen(taskData: task, taskId: taskId));
                         },
-                        borderRadius: BorderRadius.circular(15), // Bordes redondeados para el efecto de toque.
+                        borderRadius: BorderRadius.circular(12),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           child: Row(
                             children: [
                               Expanded(
@@ -157,80 +255,65 @@ class _TareasScreenState extends State<TareasScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      taskData['title'] ?? '', // Título de la tarea.
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 18,
-                                        color: darkGrey,
+                                      task['title'] ?? '',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                                        color: isCompleted ? mediumGrey : darkGrey,
                                         fontFamily: 'Montserrat',
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      taskData['project'] ?? '', // Proyecto al que pertenece la tarea.
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        color: mediumGrey,
-                                        fontFamily: 'Roboto',
+                                    if (task['dueDate'] != null && task['dueDate'].isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Fecha: ${task['dueDate']}',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: isCompleted ? mediumGrey : Colors.grey[600],
+                                          fontFamily: 'Roboto',
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ],
                                 ),
                               ),
-                              Row(
-                                // Botones de acción (eliminar y completar/deshacer).
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    // Botón para eliminar la tarea.
-                                    icon: const Icon(Icons.delete, color: errorRed, size: 26),
-                                    tooltip: 'Eliminar tarea',
-                                    onPressed: () async {
-                                      // Muestra un diálogo de confirmación antes de eliminar.
-                                      final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Text('Eliminar tarea', style: TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
-                                          content: const Text('¿Estás seguro de que deseas eliminar esta tarea?', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context, false), // Botón Cancelar.
-                                              child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold)),
-                                            ),
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(context, true), // Botón Eliminar.
-                                              child: const Text('Eliminar', style: TextStyle(color: errorRed, fontWeight: FontWeight.bold)),
-                                            ),
-                                          ],
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(15),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: errorRed, size: 26),
+                                tooltip: 'Eliminar tarea',
+                                onPressed: () async {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                      title: const Text('Eliminar tarea', style: TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
+                                      content: const Text('¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
+                                      actions: [
+                                        TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold))),
+                                        ElevatedButton(
+                                          onPressed: () => Navigator.pop(context, true),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: errorRed, 
+                                            foregroundColor: whiteColor, 
+                                            elevation: 0,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                                           ),
-                                          elevation: 10,
+                                          child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)), 
                                         ),
-                                      );
-                                      if (confirm == true) {
-                                        await _firestoreService.deleteTask(taskId); // Llama al servicio para eliminar la tarea.
-                                      }
-                                    },
-                                  ),
-                                  IconButton(
-                                    // Botón para marcar como completada o pendiente.
-                                    icon: Icon(
-                                      taskData['isCompleted'] == true ? Icons.undo : Icons.check_circle_outline, // Cambia el icono según el estado.
-                                      color: taskData['isCompleted'] == true ? completedOrange : primaryGreen, // Cambia el color según el estado.
-                                      size: 26,
+                                      ],
+                                      elevation: 10,
                                     ),
-                                    tooltip: taskData['isCompleted'] == true
-                                        ? 'Marcar como pendiente'
-                                        : 'Completar tarea', // Texto del tooltip.
-                                    onPressed: () async {
-                                      await _firestoreService.toggleTaskCompleted(
-                                        taskId,
-                                        !(taskData['isCompleted'] == true), // Alterna el estado de `isCompleted`.
-                                      );
-                                    },
-                                  ),
-                                ],
+                                  );
+                                  if (confirm == true) await _deleteTask(taskId);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(isCompleted ? Icons.undo : Icons.check_circle_outline, color: isCompleted ? completedOrange : primaryGreen, size: 26),
+                                tooltip: isCompleted ? 'Marcar como pendiente' : 'Marcar como completada',
+                                onPressed: () async {
+                                  await _firestoreService.toggleTaskCompleted(taskId, !isCompleted);
+                                },
                               ),
                             ],
                           ),
@@ -239,10 +322,162 @@ class _TareasScreenState extends State<TareasScreen> {
                     );
                   },
                 ),
-              ),
-            ],
+                const SizedBox(height: 30),
+                // ExpansionTile para tareas completadas
+                Card(
+                  elevation: 6,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  margin: EdgeInsets.zero,
+                  child: ExpansionTile(
+                    backgroundColor: whiteColor,
+                    collapsedBackgroundColor: whiteColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    childrenPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    title: const Text(
+                      'TAREAS COMPLETADAS',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: darkGrey,
+                        fontFamily: 'Montserrat',
+                      ),
+                    ),
+                    trailing: const Icon(Icons.keyboard_arrow_down, color: darkGrey),
+                    children: [
+                      StreamBuilder<QuerySnapshot>(
+                        stream: _completedTasksStream,
+                        builder: (context, completedSnapshot) {
+                          if (completedSnapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator(color: primaryGreen));
+                          }
+                          if (completedSnapshot.hasError) {
+                            return Center(child: Text('Error: ${completedSnapshot.error}', style: TextStyle(color: errorRed, fontSize: 16, fontFamily: 'Roboto')));
+                          }
+                          if (!completedSnapshot.hasData || completedSnapshot.data!.docs.isEmpty) {
+                            return const Center(child: Text('No hay tareas completadas.', style: TextStyle(color: mediumGrey, fontSize: 16, fontStyle: FontStyle.italic)));
+                          }
+
+                          final completedTasks = completedSnapshot.data!.docs;
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: completedTasks.length,
+                            itemBuilder: (context, index) {
+                              final task = completedTasks[index].data() as Map<String, dynamic>;
+                              final taskId = completedTasks[index].id;
+                              return Card(
+                                elevation: 4,
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                color: whiteColor,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                child: InkWell(
+                                  onTap: () {
+                                    showDialog(context: context, builder: (context) => DetailsTaskScreen(taskData: task, taskId: taskId));
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                task['title'] ?? '',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 16,
+                                                  decoration: TextDecoration.lineThrough,
+                                                  color: mediumGrey,
+                                                  fontFamily: 'Montserrat',
+                                                ),
+                                              ),
+                                              if (task['dueDate'] != null && task['dueDate'].isNotEmpty) ...[
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'Fecha: ${task['dueDate']}',
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                    color: mediumGrey,
+                                                    fontFamily: 'Roboto',
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, color: errorRed, size: 26),
+                                          tooltip: 'Eliminar tarea',
+                                          onPressed: () async {
+                                            final confirm = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                                title: const Text('Eliminar tarea', style: TextStyle(color: darkGrey, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
+                                                content: const Text('¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.', style: TextStyle(color: mediumGrey, fontFamily: 'Roboto')),
+                                                actions: [
+                                                  TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancelar', style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold))),
+                                                  ElevatedButton(
+                                                    onPressed: () => Navigator.pop(context, true),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: errorRed, 
+                                                      foregroundColor: whiteColor, 
+                                                      elevation: 0,
+                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                                    ),
+                                                    child: const Text('Eliminar', style: TextStyle(color: whiteColor, fontWeight: FontWeight.bold)), 
+                                                  ),
+                                                ],
+                                                elevation: 10,
+                                              ),
+                                            );
+                                            if (confirm == true) await _deleteTask(taskId);
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.undo, color: completedOrange, size: 26),
+                                          tooltip: 'Marcar como pendiente',
+                                          onPressed: () async {
+                                            await _firestoreService.toggleTaskCompleted(taskId, false);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return const NewTaskScreen(); // Abre el diálogo para crear una nueva tarea.
+            },
+          );
+        },
+        backgroundColor: primaryGreen,
+        child: const Icon(Icons.add, color: whiteColor, size: 30),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      bottomNavigationBar: const Footer(
+        currentIndex: 1, // Indica que 'Tareas' es la página actual.
       ),
     );
   }

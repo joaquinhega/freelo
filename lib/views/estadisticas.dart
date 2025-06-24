@@ -1,151 +1,115 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'widgets/Footer.dart'; // Importa el widget de pie de página personalizado
+import 'widgets/Footer.dart';
+import '../services/firestore_service.dart';
 
 class EstadisticasScreen extends StatelessWidget {
-  const EstadisticasScreen({super.key});
+  EstadisticasScreen({super.key});
 
-  // Obtiene los ingresos por mes del usuario actual desde Firestore.
-  Future<List<double>> _getIngresosPorMes() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return List.filled(12, 0.0); // Retorna ceros si no hay usuario
+  final FirestoreService _firestoreService = FirestoreService();
 
-    // Consulta las facturas del usuario en Firestore.
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('facturas')
-        .get();
-
-    List<double> ingresosPorMes = List.filled(12, 0.0); // Inicializa lista para 12 meses
-
-    for (var doc in snapshot.docs) {
-      final precio = doc['precio'];
-      final fecha = (doc['fechaFacturacion'] as Timestamp?)?.toDate();
-      if (fecha == null) continue;
-      final mes = fecha.month - 1;
-      double monto = 0.0;
-      // Convierte el precio a double, manejando diferentes tipos de datos.
-      if (precio is int) monto = precio.toDouble();
-      else if (precio is double) monto = precio;
-      else if (precio is String) monto = double.tryParse(precio) ?? 0.0;
-      ingresosPorMes[mes] += monto; // Acumula el monto por mes
-    }
-    return ingresosPorMes;
-  }
-
-  // Obtiene la cantidad total de tareas del usuario actual.
-  Future<int> _getCantidadTareas() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return 0; // Retorna 0 si no hay usuario
-
-    // Consulta las tareas del usuario en Firestore.
-    final snapshot = await FirebaseFirestore.instance
-        .collection('tasks')
-        .doc(user.uid)
-        .collection('userTasks')
-        .get();
-
-    return snapshot.docs.length; // Retorna el número de documentos (tareas)
-  }
-
-  // Obtiene el total de ingresos del usuario actual.
-  Future<double> _getIngresosTotales() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return 0.0; // Retorna 0.0 si no hay usuario
-
-    // Consulta las facturas del usuario.
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('facturas')
-        .get();
-
-    double total = 0.0;
-    for (var doc in snapshot.docs) {
-      final precio = doc['precio'];
-      // Suma el precio total, manejando diferentes tipos de datos.
-      if (precio is int) {
-        total += precio.toDouble();
-      } else if (precio is double) {
-        total += precio;
-      } else if (precio is String) {
-        total += double.tryParse(precio) ?? 0.0;
-      }
-    }
-    return total; // Retorna el total de ingresos
-  }
-
-  // Obtiene los nombres de los 3 clientes principales por ingresos.
-  Future<List<String>> _getClientesPrincipales() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return []; // Retorna lista vacía si no hay usuario
-
-    // Consulta las facturas del usuario.
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('facturas')
-        .get();
-
-    Map<String, double> clientes = {}; // Mapa para acumular ingresos por cliente
-    for (var doc in snapshot.docs) {
-      // Obtiene el nombre del cliente o "Sin cliente" si no está presente.
-      final cliente = doc.data().containsKey('cliente') ? doc['cliente'] : 'Sin cliente';
-      final precio = doc['precio'];
-      double monto = 0.0;
-      // Convierte el precio a double.
-      if (precio is int) monto = precio.toDouble();
-      else if (precio is double) monto = precio;
-      else if (precio is String) monto = double.tryParse(precio) ?? 0.0;
-      clientes[cliente] = (clientes[cliente] ?? 0) + monto; // Suma el monto al cliente
-    }
-    // Ordena los clientes por monto de mayor a menor y toma los primeros 3.
-    final sorted = clientes.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    return sorted.take(3).map((e) => e.key).toList();
+  // Helper widget para los ítems del Summary Component
+  Widget _buildSummaryItem({required IconData icon, required String label, required String value}) {
+    return Column(
+      children: [
+        Icon(icon, size: 30, color: Colors.green[700]),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.green[900]),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Estadísticas'), // Título de la AppBar
-        automaticallyImplyLeading: false, // Oculta el botón de retroceso automático
+        title: const Text('Estadísticas'),
+        automaticallyImplyLeading: false,
       ),
-      bottomNavigationBar: const Footer(currentIndex: 3), // Pie de página de navegación
+      bottomNavigationBar: const Footer(currentIndex: 3),
       body: Padding(
-        padding: const EdgeInsets.all(16), // Padding global para el cuerpo
-        child: SingleChildScrollView( // Permite el scroll si el contenido es grande
+        padding: const EdgeInsets.all(16),
+        child: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, // Alinea los widgets al inicio
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Summary Component
+              FutureBuilder<List<double>>(
+                future: Future.wait([
+                  _firestoreService.getIngresoMensualActual(),
+                  _firestoreService.getCantidadProyectosActivos().then((v) => v.toDouble()),
+                  _firestoreService.getCantidadTareasPendientes().then((v) => v.toDouble()),
+                ]),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final ingresoMensual = snapshot.data![0];
+                  final proyectosActivos = snapshot.data![1].toInt();
+                  final tareasPendientes = snapshot.data![2].toInt();
+
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildSummaryItem(
+                          icon: Icons.attach_money,
+                          label: 'Ingreso Mensual',
+                          value: '\$${ingresoMensual.toStringAsFixed(2)}',
+                        ),
+                        _buildSummaryItem(
+                          icon: Icons.folder_open,
+                          label: 'Proyectos Activos',
+                          value: proyectosActivos.toString(),
+                        ),
+                        _buildSummaryItem(
+                          icon: Icons.task_alt,
+                          label: 'Tareas Pendientes',
+                          value: tareasPendientes.toString(),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
               const Text('Ingresos mensuales', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               SizedBox(
-                height: 180, // Altura fija para el gráfico
+                height: 180,
                 child: FutureBuilder<List<double>>(
-                  future: _getIngresosPorMes(), // Llama a la función para obtener datos
+                  future: _firestoreService.getIngresosPorMes(),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator()); // Muestra carga
+                      return const Center(child: CircularProgressIndicator());
                     }
                     final ingresosPorMes = snapshot.data!;
-                    return LineChart( // Gráfico de líneas de fl_chart
+                    return LineChart(
                       LineChartData(
-                        gridData: FlGridData(show: false), // Oculta la cuadrícula
-                        borderData: FlBorderData(show: false), // Oculta el borde
+                        gridData: FlGridData(show: false),
+                        borderData: FlBorderData(show: false),
                         titlesData: FlTitlesData(
                           leftTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false), // Oculta títulos izquierdos
+                            sideTitles: SideTitles(showTitles: false),
                           ),
                           rightTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false), // Oculta títulos derechos
+                            sideTitles: SideTitles(showTitles: false),
                           ),
                           topTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false), // Oculta títulos superiores
+                            sideTitles: SideTitles(showTitles: false),
                           ),
                           bottomTitles: AxisTitles(
                             sideTitles: SideTitles(
@@ -153,7 +117,6 @@ class EstadisticasScreen extends StatelessWidget {
                               reservedSize: 22,
                               interval: 1,
                               getTitlesWidget: (value, meta) {
-                                // Muestra las abreviaturas de los meses en el eje X
                                 const meses = [
                                   'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
                                   'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
@@ -170,17 +133,16 @@ class EstadisticasScreen extends StatelessWidget {
                         lineBarsData: [
                           LineChartBarData(
                             spots: [
-                              // Puntos de datos para el gráfico
                               for (int i = 0; i < ingresosPorMes.length; i++)
                                 FlSpot(i.toDouble(), ingresosPorMes[i])
                             ],
-                            isCurved: true, // Línea curva
-                            color: Colors.green[700], // Color de la línea
+                            isCurved: true,
+                            color: Colors.green[700],
                             barWidth: 3,
-                            dotData: FlDotData(show: false), // Oculta los puntos en la línea
+                            dotData: FlDotData(show: false),
                             belowBarData: BarAreaData(
                               show: true,
-                              color: Colors.green.withOpacity(0.2), // Área bajo la línea
+                              color: Colors.green.withOpacity(0.2),
                             ),
                           ),
                         ],
@@ -210,18 +172,69 @@ class EstadisticasScreen extends StatelessWidget {
                   },
                 ),
               ),
-              const SizedBox(height: 16),
-              // Muestra la cantidad de tareas creadas
-              FutureBuilder<int>(
-                future: _getCantidadTareas(),
-                builder: (context, snapshot) {
-                  final cantidad = snapshot.data ?? 0;
-                  return Text('Tareas creadas: $cantidad');
-                },
+              const SizedBox(height: 24),
+              const Text('Ingresos por proyecto', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 250,
+                child: FutureBuilder<Map<String, double>>(
+                  future: _firestoreService.getIngresosPorProyecto(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final ingresosPorProyecto = snapshot.data!;
+                    if (ingresosPorProyecto.isEmpty) {
+                      return const Center(child: Text('No hay datos de ingresos por proyecto.'));
+                    }
+
+                    final List<Color> pieColors = [
+                      Color(0xFF2E7D32),
+                      Color(0xFF66BB6A),
+                      Color(0xFF388E3C),
+                      Color(0xFF81C784),
+                      Color(0xFF43A047),
+                      Color(0xFFA5D6A7),
+                      Color(0xFFB9F6CA),
+                      Color(0xFF388E3C),
+                    ];
+                    int colorIndex = 0;
+
+                    final List<PieChartSectionData> sections = ingresosPorProyecto.entries.map((entry) {
+                      final color = pieColors[colorIndex % pieColors.length];
+                      colorIndex++;
+                      return PieChartSectionData(
+                        color: color,
+                        value: entry.value,
+                        title: '${entry.key}\n\$${entry.value.toStringAsFixed(2)}',
+                        radius: 80,
+                        titleStyle: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                        badgeWidget: Text(
+                          entry.key,
+                          style: const TextStyle(color: Colors.black, fontSize: 10),
+                        ),
+                        badgePositionPercentageOffset: 1.4,
+                      );
+                    }).toList();
+
+                    return PieChart(
+                      PieChartData(
+                        sections: sections,
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 40,
+                        pieTouchData: PieTouchData(
+                          touchCallback: (FlTouchEvent event, PieTouchResponse? pieTouchResponse) {},
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
+              const SizedBox(height: 16),
               // Muestra los ingresos totales
               FutureBuilder<double>(
-                future: _getIngresosTotales(),
+                future: _firestoreService.getIngresosTotales(),
                 builder: (context, snapshot) {
                   final ingresos = snapshot.data ?? 0.0;
                   return Text('Ingresos Totales: \$${ingresos.toStringAsFixed(2)}');

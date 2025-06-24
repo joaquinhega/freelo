@@ -130,8 +130,8 @@ class _FacturasScreenState extends State<FacturasScreen> {
                       final invoiceData = invoice.data() as Map<String, dynamic>;
 
                       final precio = invoiceData['precio'];
-                      final fechaFacturacion = invoiceData['fechaFacturacion'];
-                      final fechaVencimiento = invoiceData['fechaVencimiento'];
+                      final fechaFacturacion = invoiceData['fechaFacturacion'] ?? invoiceData['emissionDate'];
+                      final fechaVencimiento = invoiceData['fechaVencimiento'] ?? invoiceData['dueDate'];
 
                       // Validación extra para evitar errores de null
                       final fechaFacturacionStr = _formatDate(fechaFacturacion);
