@@ -1,4 +1,4 @@
-🚀 Freelo — Plataforma para Freelancers Tecnológicos
+#🚀 Freelo — Plataforma para Freelancers Tecnológicos
 
 Gestión completa de proyectos, automatización y conexión continua con clientes.
 
